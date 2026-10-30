@@ -95,6 +95,14 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .gb-v{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:14px}
 .gb-tot{display:flex;justify-content:space-between;border-top:2px solid var(--ink);margin-top:14px;padding-top:8px;font-weight:700}
 @media (max-width:620px){.gb{grid-template-columns:1fr auto;row-gap:4px}.gb-t{grid-column:1 / -1;grid-row:2}.gb-l{flex-direction:row;gap:8px;align-items:baseline}}
+.juice{text-align:center;margin:26px auto 0;max-width:420px}
+.juice-q{margin:0 0 8px;color:var(--muted);font-size:14px}
+.juice-btn{font:inherit;font-size:15px;font-weight:600;background:var(--green);color:#fff;border:0;border-radius:999px;padding:10px 20px;cursor:pointer}
+.juice-btn:hover{filter:brightness(1.1)}
+.juice-rev[hidden],.juice-btn[hidden]{display:none}
+.juice-rev{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}
+.juice-num{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;background:var(--green-soft);color:var(--green);border-radius:999px;padding:9px 16px}
+.juice-copy{font:inherit;font-size:13.5px;font-weight:600;border:1px solid var(--green);background:#fff;color:var(--green);border-radius:999px;padding:7px 14px;cursor:pointer}
 .note{font-size:13px;color:var(--muted);margin-top:10px}
 .assume{background:var(--amber-soft);border:1px solid #ecd9ae;border-radius:8px;padding:10px 14px;font-size:13.5px;color:#5c3a00}
 .assume ul{margin:6px 0 0;padding-left:18px}
@@ -200,7 +208,15 @@ footer p{margin:0 0 10px}
       <li>Effects on pension or retirement benefits for staff who have left.</li>
     </ul>
     <p><b>Assumed:</b> house allowance doesn't change; increments continue each year in the month you choose; promotions start at the grade and notch you enter; arrears are taxed in the month they're paid. KRA lets you spread arrears tax back over earlier years, which can lower it. Universities already paying above these rates keep their rates.</p>
-    <p><b>Source:</b> Return to Work Formula, IPUCCF (FKE) and UASU, 30 Oct 2026. Clauses 8–12, Schedules I and II. Where your copy differs, your copy is right.</p>
+    <p><b>Source:</b> Return to Work Formula, IPUCCF (FKE) and UASU, 30 Oct 2026. Schedules I and II. <b>Where your copy differs, your copy is right.</b></p>
+  </div>
+  <div class="juice">
+    <p class="juice-q">Arrears looking good?</p>
+    <button type="button" class="juice-btn" id="juiceBtn">🧃 Buy the don a juice</button>
+    <div class="juice-rev" id="juiceRev" hidden>
+      <span class="juice-num" id="juiceNum"></span>
+      <button type="button" class="juice-copy" id="juiceCopy">Copy number</button>
+    </div>
   </div>
 </footer>
 
@@ -461,6 +477,12 @@ function renderLeaver(R, label){
 
 function syncPromo(){ ["p1","p2","lv"].forEach(p=>{ $(p+"f").style.display = $(p+"on").checked ? "" : "none"; }); }
 document.querySelectorAll("select,input").forEach(el=>{ el.addEventListener("input",()=>{ syncPromo(); compute(); }); el.addEventListener("change",()=>{ syncPromo(); compute(); }); });
+
+// donate button: number assembled at runtime so it isn't plain text in the page
+(()=>{ const parts=["0721","643","535"];
+  $("juiceBtn").addEventListener("click",()=>{ $("juiceNum").textContent="Pochi la Biashara · "+parts.join(" "); $("juiceBtn").hidden=true; $("juiceRev").hidden=false; });
+  $("juiceCopy").addEventListener("click",async()=>{ try{ await navigator.clipboard.writeText(parts.join("")); $("juiceCopy").textContent="Copied ✓"; }catch(e){ $("juiceCopy").textContent="Copy failed: long-press the number"; } });
+})();
 syncPromo(); compute();
 </script>
 <script data-goatcounter="https://kagiricharles.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
