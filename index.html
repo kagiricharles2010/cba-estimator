@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CBA 2025–2029 Pay Estimator for Academic Staff (Demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600;7..72,700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1a2420; --muted:#5d6762; --line:#dcdfdc; --bg:#f7f6f2; --card:#ffffff;
+  --green:#1f5a43; --green-soft:#e8f0ec; --amber-soft:#fbf1dc;
+  --red:#a1281e; --pos:#1f6b3f;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Public Sans",system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;font-size:15px}
+.num,td.n,th.n{font-variant-numeric:tabular-nums}
+.demo-bar{background:var(--amber-soft);border-bottom:1px solid #ecd9ae;color:#5c3a00;font-size:13px;padding:7px 16px;text-align:center}
+header{max-width:1080px;margin:0 auto;padding:28px 20px 6px}
+h1{font-family:Literata,Georgia,serif;font-weight:700;font-size:clamp(26px,4vw,36px);line-height:1.15;margin:0 0 6px}
+.sub{color:var(--muted);max-width:720px;margin:0}
+.wrap{max-width:1080px;margin:0 auto;padding:16px 20px 40px;display:grid;grid-template-columns:330px 1fr;gap:22px;align-items:start}
+.wrap>*{min-width:0}
+@media (max-width:880px){.wrap{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+.inputs{position:sticky;top:12px}
+@media (max-width:880px){.inputs{position:static}}
+h2{font-family:Literata,Georgia,serif;font-size:19px;margin:0 0 4px;font-weight:600}
+h3{font-size:14px;font-weight:700;margin:18px 0 2px;padding-top:14px;border-top:1px solid var(--line)}
+h3.first{border-top:0;padding-top:0;margin-top:8px}
+label{display:block;font-size:13.5px;font-weight:500;margin:10px 0 4px}
+.hint{font-size:12.5px;color:var(--muted);margin:4px 0 0}
+select,input[type=number],input[type=month]{width:100%;font:inherit;font-size:15px;padding:8px 10px;border:1px solid #c9cfcb;border-radius:6px;background:#fff;color:var(--ink)}
+select:focus,input:focus{outline:2px solid var(--green);outline-offset:1px}
+.chk{display:flex;gap:8px;align-items:center;font-weight:500;margin:10px 0 0}
+.chk input{width:16px;height:16px;accent-color:var(--green)}
+.sub-fields{padding-left:24px}
+details.adv{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--green)}
+.err{color:var(--red);font-size:13px;margin-top:8px}
+.outputs{display:flex;flex-direction:column;gap:18px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:620px){.kpis{grid-template-columns:1fr}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.kpi .k{font-size:12.5px;color:var(--muted);font-weight:500}
+.kpi .v{font-size:25px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+.kpi.hl{background:var(--green);border-color:var(--green);color:#fff}
+.kpi.hl .k,.kpi.hl .s{color:#cfe3d8}
+.sec-num{display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--green-soft);color:var(--green);font-family:"Public Sans",sans-serif;font-size:12.5px;font-weight:700;text-align:center;line-height:22px;margin-right:8px;vertical-align:2px}
+.lead{color:var(--muted);font-size:14px;margin:2px 0 12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr.hl td{background:var(--green-soft);font-weight:600}
+tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
+.scroll{overflow-x:auto}
+.pos{color:var(--pos)} .neg{color:var(--red)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:620px){.split{grid-template-columns:1fr}}
+.box{border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.box h4{margin:0 0 6px;font-size:14px}
+.ln{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:3px 0}
+.ln span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.ln.t{border-top:1px solid var(--ink);margin-top:4px;padding-top:6px;font-weight:700}
+.ln.m{color:var(--muted)}
+.bar{display:flex;height:24px;border-radius:4px;overflow:hidden;margin:10px 0 8px;background:#eef1ef}
+.bar div{height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.note{font-size:13px;color:var(--muted);margin-top:10px}
+.assume{background:var(--amber-soft);border:1px solid #ecd9ae;border-radius:8px;padding:10px 14px;font-size:13.5px;color:#5c3a00}
+.assume ul{margin:6px 0 0;padding-left:18px}
+button.copy{font:inherit;font-size:14px;font-weight:600;border:1px solid var(--green);background:#fff;color:var(--green);padding:8px 14px;border-radius:6px;cursor:pointer}
+button.copy:hover{background:var(--green-soft)}
+footer{max-width:1080px;margin:0 auto;padding:0 20px 48px}
+footer .card{font-size:13.5px;color:#333d38}
+footer h2{font-size:17px;margin-bottom:8px}
+footer ul{padding-left:18px;margin:4px 0 12px}
+footer li{margin:2px 0}
+footer p{margin:0 0 10px}
+</style>
+</head>
+<body>
+
+<div class="demo-bar"><b>Demo</b> · Unofficial estimate. Not certified or endorsed by UASU, IPUCCF, the Ministry, KRA or any other body.</div>
+
+<header>
+  <h1>2025–2029 CBA pay estimator</h1>
+  <p class="sub">For academic staff in Kenyan public universities, using the salary and allowance schedules in the Return to Work Formula of 30 October 2026. Use it to check that what you're paid is in the right range.</p>
+</header>
+
+<div class="wrap">
+  <section class="card inputs" aria-label="Your details">
+    <h2>Your details</h2>
+    <h3 class="first">Starting point</h3>
+    <label for="g0">Grade on 1 Jul 2025</label>
+    <select id="g0"></select>
+    <label for="n0">Notch on 1 Jul 2025</label>
+    <select id="n0"></select>
+    <p class="hint">Amounts are 2024/25 basic pay. Match yours to your payslip.</p>
+    <label for="im">Increment month</label>
+    <select id="im"></select>
+
+    <h3>Promotions</h3>
+    <label class="chk"><input type="checkbox" id="p1on"> First promotion</label>
+    <div id="p1f" class="sub-fields">
+      <label for="p1d">Effective month</label>
+      <input type="month" id="p1d" min="2025-07" max="2029-06" value="2026-07">
+      <label for="p1g">New grade</label><select id="p1g"></select>
+      <label for="p1n">New notch</label><select id="p1n"></select>
+    </div>
+    <label class="chk"><input type="checkbox" id="p2on"> Second promotion</label>
+    <div id="p2f" class="sub-fields">
+      <label for="p2d">Effective month</label>
+      <input type="month" id="p2d" min="2025-07" max="2029-06" value="2028-07">
+      <label for="p2g">New grade</label><select id="p2g"></select>
+      <label for="p2n">New notch</label><select id="p2n"></select>
+    </div>
+
+    <h3>Allowances now</h3>
+    <label for="cc">Commuter (KES/month)</label>
+    <input type="number" id="cc" min="0" step="100" placeholder="e.g. 12,000">
+    <p class="hint">Leave blank if 18,000 or more.</p>
+    <label for="ha">House (KES/month)</label>
+    <input type="number" id="ha" min="0" step="100" placeholder="e.g. 50,000">
+    <p class="hint">Not changed by the agreement. Used for net pay only.</p>
+
+    <h3>Deductions</h3>
+    <label for="penr">Pension (% of basic)</label>
+    <input type="number" id="penr" min="0" max="30" step="0.5" value="7.5">
+    <p class="hint">Enter 0 if none. Union dues are fixed at 2% of basic.</p>
+
+    <details class="adv">
+      <summary>More options</summary>
+      <label for="cp">Professorial allowance now (KES/month)</label>
+      <input type="number" id="cp" min="0" placeholder="Blank = no change">
+      <label for="cph">Commuter increase</label>
+      <select id="cph">
+        <option value="full">Full 18,000 from Jul 2025</option>
+        <option value="phased">Phased over 3 years</option>
+      </select>
+      <label class="chk"><input type="checkbox" id="nssf" checked> Deduct NSSF</label>
+    </details>
+    <div class="err" id="err"></div>
+    <p class="hint" style="margin-top:14px">Calculated in your browser. Nothing is stored or sent.</p>
+  </section>
+
+  <main class="outputs" id="out" aria-live="polite"></main>
+</div>
+
+<footer>
+  <div class="card">
+    <h2>Scope and disclaimer</h2>
+    <p><b>Demo, not certified.</b> This tool is unofficial and has not been checked or endorsed by UASU, IPUCCF, FKE, the Ministry of Education, KRA or any university. The figures are estimates, not pay advice. Your payroll office and UASU chapter have the final word.</p>
+    <p><b>Included:</b> basic salary (Schedule I); commuter and professorial allowances (Schedule II); arrears from Jul 2025 to Dec 2026; PAYE, SHIF, Housing Levy, NSSF and pension; union dues at 2% of basic and of arrears.</p>
+    <p><b>Not included:</b></p>
+    <ul>
+      <li>Leave and Book &amp; ICT allowances.</li>
+      <li>Passage and baggage allowance (no rates given).</li>
+      <li>Items still under negotiation (due 28 Feb 2027).</li>
+      <li>Restored strike-period pay (Sept–Oct 2026).</li>
+      <li>SACCO, loans, HELB and other voluntary deductions.</li>
+    </ul>
+    <p><b>Assumed:</b> house allowance doesn't change; increments continue each year in the month you choose; promotions start at the grade and notch you enter; arrears are taxed in the month they're paid. KRA lets you spread arrears tax back over earlier years, which can lower it. Universities already paying above these rates keep their rates.</p>
+    <p><b>Source:</b> Return to Work Formula, IPUCCF (FKE) and UASU, 30 Oct 2026. Clauses 8–12, Schedules I and II. Where your copy differs, your copy is right.</p>
+  </div>
+</footer>
+
+<script>
+const T = {"15A":[[224631,232494,240632,249055,257772],[233616,244119,252664,261508,270661],[242962,256325,265297,274583,284194],[252680,269142,278562,288312,298403],[262789,282599,292490,302728,313324],[273301,296730,307116,317866,328992],[284233,311567,322472,333759,345441],[295604,327145,338596,350447,362713],[307428,343504,355527,367971,380850],[319725,360679,373303,386369,399892],[332515,378714,391969,405688,419888],[345816,397651,411569,425974,440884]],"14A":[[193182,199944,206943,214187,221684],[200911,209942,217290,224896,232768],[208947,220440,228156,236142,244407],[217306,231463,239565,247950,256629],[226000,243036,251543,260348,269461],[235040,255188,264120,273365,282933],[244442,267948,277327,287034,297081],[254220,281346,291194,301386,311935],[264389,295413,305753,316455,327531],[274965,310185,321042,332279,343909],[285965,325694,337094,348893,361105],[297403,341979,353949,366338,379160]],"13A":[[154739,160155,165761,171563,177568],[160929,168163,174049,180141,186446],[167367,176571,182751,189148,195769],[174063,185400,191889,198606,205558],[181025,194671,201485,208537,215836],[188267,204405,211560,218965,226629],[195798,214625,222137,229912,237959],[203631,225357,233245,241409,249859],[211776,236625,244907,253479,262351],[220247,248457,257153,266154,275470],[229057,260881,270012,279463,289245],[238221,273925,283513,293436,303707]],"12A":[[121928,126196,130613,135185,139917],[126805,132506,137144,141945,146914],[131877,139132,144002,149043,154260],[137154,146090,151204,156497,161975],[142640,153395,158764,164321,170073],[148347,161065,166703,172538,178577],[154281,169118,175038,181165,187506],[160453,177574,183790,190223,196881],[166872,186454,192980,199735,206726],[173548,195777,202630,209723,217064],[180490,205566,212761,220208,227916],[187710,215845,223400,231219,239312]],"11A":[[107872,111648,115556,119601,123788],[112187,117231,121335,125582,129978],[116675,123093,127402,131862,136478],[121344,129248,133772,138455,143301],[126198,135711,140461,145378,150467],[131246,142497,147485,152647,157990],[136496,149622,154859,160280,165890],[141956,157104,162603,168295,174186],[147636,164960,170734,176710,182895],[153542,173209,179272,185547,192042],[159683,181870,188236,194825,201644],[166072,190963,197647,204565,211725]],"10A":[[63647,65875,68181,70568,73038],[66194,69170,71591,74097,76691],[68843,72629,75172,77804,80528],[71596,76260,78930,81693,84553],[74460,80074,82877,85778,88781],[77439,84079,87022,90068,93221],[80538,88283,91373,94572,97883],[83759,92697,95942,99300,102776],[87110,97333,100740,104266,107916],[90594,102201,105779,109482,113314],[94218,107311,111067,114955,118979],[97988,112678,116622,120704,124929]]};
+const GRADES = [["15A","Professor"],["14A","Associate Professor"],["13A","Senior Lecturer"],["12A","Lecturer"],["11A","Assistant Lecturer / Tutorial Fellow"],["10A","Graduate Assistant"]];
+const RANK = {"10A":0,"11A":1,"12A":2,"13A":3,"14A":4,"15A":5};
+const LEAVE = {"15A":21980,"14A":21197,"13A":19021,"12A":17570,"11A":14087,"10A":8754};
+const BOOK  = {"15A":18500,"14A":17500,"13A":15000,"12A":14000,"11A":12000,"10A":10000};
+const PROF  = {"15A":7500,"14A":6000};
+const COMMUTER = 18000;
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const FY = ["2025/26","2026/27","2027/28","2028/29"];
+const M_NOW = 15, M_JAN27 = 18; // Oct 2026, Jan 2027 (index from Jul 2025)
+
+const $ = id => document.getElementById(id);
+const fmt = v => (v<0?"−":"") + "KES " + Math.round(Math.abs(v)).toLocaleString("en-KE");
+const fmtS = v => (v>0?"+":v<0?"−":"") + Math.round(Math.abs(v)).toLocaleString("en-KE");
+const mLabel = m => { const cm=(6+m)%12, y=2025+Math.floor((6+m)/12); return MONTHS[cm].slice(0,3)+" "+y; };
+const idxFromMonthInput = s => { if(!s) return null; const [y,mo]=s.split("-").map(Number); return (y-2025)*12 + (mo-7); };
+const numOrNull = id => { const v=$(id).value.trim(); return v==="" ? null : Math.max(0, Number(v)); };
+
+function fillGrades(sel, def){ sel.innerHTML = GRADES.map(([g,t])=>`<option value="${g}">${g} – ${t}</option>`).join(""); sel.value=def; }
+function fillNotches(sel, g, def){ const keep = def ?? sel.value; sel.innerHTML = Array.from({length:12},(_,i)=>`<option value="${i+1}">Notch ${i+1} · KES ${T[g][i][0].toLocaleString("en-KE")}</option>`).join(""); sel.value=keep; }
+const PAIRS = [["g0","n0"],["p1g","p1n"],["p2g","p2n"]];
+fillGrades($("g0"),"12A"); fillNotches($("n0"),"12A","5");
+fillGrades($("p1g"),"13A"); fillNotches($("p1n"),"13A","1");
+fillGrades($("p2g"),"14A"); fillNotches($("p2n"),"14A","1");
+PAIRS.forEach(([gs,ns])=>$(gs).addEventListener("change",()=>fillNotches($(ns),$(gs).value)));
+const ORDER = ["10A","11A","12A","13A","14A","15A"];
+[["p1on","p1g","p1n","g0"],["p2on","p2g","p2n","p1g"]].forEach(([on,gs,ns,from])=>$(on).addEventListener("change",()=>{
+  if(!$(on).checked) return; const base=$(from).value;
+  if(RANK[$(gs).value] <= RANK[base]){ const up=ORDER[Math.min(5,RANK[base]+1)]; $(gs).value=up; fillNotches($(ns),up,"1"); }
+}));
+$("im").innerHTML = MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join(""); $("im").value="6";
+
+// ---- statutory deductions (Oct 2026) ----
+function payeOn(taxable){
+  const bands=[[24000,.10],[8333,.25],[467667,.30],[300000,.325],[Infinity,.35]];
+  let t=0, rest=Math.max(0,taxable);
+  for(const [w,r] of bands){ const x=Math.min(rest,w); t+=x*r; rest-=x; if(rest<=0) break; }
+  return Math.max(0, t-2400);
+}
+// netPre = after statutory deductions and pension, before union dues
+function deductions(gross, basic, o){
+  const nssf = o.nssf ? Math.min(gross,108000)*0.06 : 0;
+  const pen = basic*o.penr;
+  const penDed = Math.min(pen, Math.max(0, 30000 - nssf));
+  const shif = gross*0.0275, ahl = gross*0.015;
+  const taxable = gross - nssf - penDed - shif - ahl;
+  const paye = payeOn(taxable);
+  const union = basic*0.02;
+  const netPre = gross - nssf - pen - shif - ahl - paye;
+  return {nssf, pen, shif, ahl, paye, union, netPre, net: netPre - union};
+}
+
+// ---- main model ----
+function compute(){
+  const o = {
+    g0:$("g0").value, n0:+$("n0").value, im:+$("im").value,
+    promos:[], cc:numOrNull("cc"), ha:numOrNull("ha")||0,
+    cp:numOrNull("cp"),
+    cph:$("cph").value, nssf:$("nssf").checked, penr:Math.min(30,(numOrNull("penr")??0))/100
+  };
+  const errs=[];
+  [[1,"p1"],[2,"p2"]].forEach(([k,p])=>{
+    if(!$(p+"on").checked) return;
+    const m = idxFromMonthInput($(p+"d").value);
+    if(m===null || m<0 || m>47){ errs.push(`Promotion ${k}: pick a month between Jul 2025 and Jun 2029.`); return; }
+    o.promos.push({m, g:$(p+"g").value, n:+$(p+"n").value, k});
+  });
+  o.promos.sort((a,b)=>a.m-b.m);
+  let prevRank = RANK[o.g0];
+  o.promos.forEach(p=>{ if(RANK[p.g] <= prevRank) errs.push(`Promotion ${p.k}: the new grade should be higher than the previous one.`); prevRank = Math.max(prevRank, RANK[p.g]); });
+  $("err").textContent = errs.join(" ");
+
+  // commuter
+  const curC = o.cc===null ? COMMUTER : o.cc;
+  const newC = fy => { if(curC>=COMMUTER) return curC; if(o.cph==="full") return COMMUTER; return curC + (COMMUTER-curC)*Math.min(fy+1,3)/3; };
+  const oldProf = g => PROF[g] ? (o.cp===null ? PROF[g] : o.cp) : 0;
+
+  // month-by-month path
+  const rows=[]; let g=o.g0, n=o.n0;
+  for(let m=0;m<48;m++){
+    const cal=(6+m)%12;
+    if(m>0 && cal===o.im) n=Math.min(12,n+1);
+    o.promos.filter(p=>p.m===m).forEach(p=>{ g=p.g; n=p.n; });
+    const fy=Math.floor(m/12);
+    const oldB=T[g][n-1][0], newB=T[g][n-1][fy+1];
+    const oldA = curC + o.ha + oldProf(g);
+    const newA = newC(fy) + o.ha + (PROF[g]||0);
+    rows.push({m, fy, g, n, oldB, newB, oldA, newA, oldG:oldB+oldA, newG:newB+newA, diff:(newB+newA)-(oldB+oldA)});
+  }
+  const sum = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+r.diff,0);
+  const arr2526 = sum(0,12);
+  const arrJulDec26 = sum(12,18);
+  const fyGain = [0,1,2,3].map(fy=>sum(fy*12,fy*12+12));
+  const total = fyGain.reduce((a,b)=>a+b,0);
+
+  // net figures
+  const now = rows[M_NOW], jan = rows[M_JAN27];
+  const dNow = deductions(now.oldG,now.oldB,o), dJan = deductions(jan.newG,jan.newB,o);
+  const instal = arr2526/3;
+  const sumB = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+(r.newB-r.oldB),0);
+  // arrears taxed on top of the January 2027 salary; pension on the basic part; 2% union fee on all arrears
+  const withArr = (arr, arrB) => { arr=Math.max(0,arr); arrB=Math.max(0,Math.min(arrB,arr));
+    const d0=deductions(jan.newG,jan.newB,o), d1=deductions(jan.newG+arr,jan.newB+arrB,o); const union=arr*0.02;
+    return {gross:arr, paye:d1.paye-d0.paye, shif:d1.shif-d0.shif, ahl:d1.ahl-d0.ahl, nssf:d1.nssf-d0.nssf, pen:d1.pen-d0.pen, union, net:(d1.netPre-d0.netPre)-union}; };
+  const instNet = withArr(instal, sumB(0,12)/3);
+  const lumpNet = withArr(arrJulDec26, sumB(12,18));
+
+  render({o,rows,arr2526,arrJulDec26,fyGain,total,now,jan,dNow,dJan,instal,instNet,lumpNet,curC,newC});
+}
+
+function line(l,v,cls=""){ return `<div class="ln ${cls}"><span>${l}</span><span>${v}</span></div>`; }
+
+function render(R){
+  const {o,rows,now,jan,dNow,dJan} = R;
+  const label = r => `${r.g} · notch ${r.n}`;
+  const snaps = [
+    {t:"Today, Oct 2026 (2024/25 terms)", r:now, old:true},
+    {t:"From Jul 2025 (2025/26 rates)", r:rows[0]},
+    {t:"From Jul 2026 (2026/27 rates)", r:rows[12]},
+    {t:"Jan 2027 — first payslip on new terms", r:jan, hl:true},
+    {t:"From Jul 2027 (2027/28 rates)", r:rows[24]},
+    {t:"From Jul 2028 (2028/29 rates)", r:rows[36]},
+  ];
+
+  // gain decomposition for Jan 2027 (two years of 3.5% on notch 1)
+  const atb = jan.oldB*(Math.pow(1.035,2)-1);
+  const notchPart = jan.newB - jan.oldB - atb;
+  const allowPart = jan.newA - jan.oldA;
+  const parts = [[atb,"#1f5a43","3.5% a year, across the board"],[notchPart,"#6aa88a","Wider gap between notches (4% → 5%)"],[allowPart,"#d9a441","Allowances"]].filter(p=>p[0]>0.5);
+  const ptot = parts.reduce((s,p)=>s+p[0],0)||1;
+
+  let h = "";
+  h += `<div class="kpis">
+    <div class="kpi hl"><div class="k">January 2027 monthly gross</div><div class="v">${fmt(jan.newG)}</div><div class="s">${fmtS(jan.newG-now.oldG)} vs today · ${label(jan)}</div></div>
+    <div class="kpi"><div class="k">Arrears Jul 2025 – Jun 2026 (gross)</div><div class="v">${fmt(R.arr2526)}</div><div class="s">3 instalments of ~${fmt(R.instal)}</div></div>
+    <div class="kpi"><div class="k">Arrears Jul – Dec 2026 (gross)</div><div class="v">${fmt(R.arrJulDec26)}</div><div class="s">Paid with the January 2027 salary</div></div>
+  </div>`;
+
+  // 1. monthly gross by year
+  h += `<section class="card"><h2><span class="sec-num">1</span>Monthly pay by year</h2>
+  <p class="lead">New-scale pay compared with what you're paid today.</p>
+  <div class="scroll"><table><thead><tr><th>When</th><th>Grade · notch</th><th class="n">Basic</th><th class="n">Allowances</th><th class="n">Gross / month</th><th class="n">Est. net</th></tr></thead><tbody>`;
+  snaps.forEach(s=>{
+    const b = s.old? s.r.oldB : s.r.newB, a = s.old? s.r.oldA : s.r.newA, gsum=b+a;
+    h += `<tr class="${s.hl?'hl':''}"><td>${s.t}</td><td>${label(s.r)}</td><td class="n">${fmt(b)}</td><td class="n">${fmt(a)}</td><td class="n">${fmt(gsum)}</td><td class="n">${fmt(deductions(gsum,b,o).net)}</td></tr>`;
+  });
+  h += `</tbody></table></div>
+  <p class="note">Allowances: commuter${o.ha?", house":""}${PROF[jan.g]?", professorial":""}.</p></section>`;
+
+  // 2 + 3. arrears
+  const a = R.instNet, l = R.lumpNet;
+  h += `<section class="card"><h2><span class="sec-num">2</span>Arrears and the January 2027 payment</h2>
+  <p class="lead">New rates minus what you were paid on 2024/25 terms.</p>
+  <div class="split">
+    <div class="box"><h4>2025/26 arrears (3 instalments)</h4>
+      ${line("Total, Jul 2025 – Jun 2026", fmt(R.arr2526))}
+      ${line("<b>Each instalment</b>", "<b>"+fmt(R.instal)+"</b>")}
+      ${line("PAYE", "−"+fmt(a.paye),"m")}
+      ${line("SHIF + Housing Levy", "−"+fmt(a.shif+a.ahl),"m")}
+      ${a.nssf>0.5?line("NSSF", "−"+fmt(a.nssf),"m"):""}
+      ${a.pen>0.5?line("Pension", "−"+fmt(a.pen),"m"):""}
+      ${line("Union fee (2%)", "−"+fmt(a.union),"m")}
+      ${line("Take-home per instalment", fmt(a.net),"t")}
+      <p class="note">Payment dates not yet set.</p>
+    </div>
+    <div class="box"><h4>January 2027 payslip</h4>
+      ${line("January salary", fmt(jan.newG))}
+      ${line("Arrears, Jul – Dec 2026", fmt(R.arrJulDec26))}
+      ${line("<b>Total gross</b>", "<b>"+fmt(jan.newG+R.arrJulDec26)+"</b>")}
+      ${line("Take-home: salary", fmt(dJan.net),"m")}
+      ${line("Take-home: arrears", fmt(l.net),"m")}
+      ${line("Total take-home", fmt(dJan.net+l.net),"t")}
+    </div>
+  </div></section>`;
+
+  // 4. net pay
+  h += `<section class="card"><h2><span class="sec-num">3</span>Take-home pay: today vs January 2027</h2>
+  <p class="lead">After PAYE, SHIF, Housing Levy${o.nssf?", NSSF":""}${o.penr?`, pension (${(o.penr*100).toFixed(1)}%)`:""} and union dues (2%).</p>
+  <div class="scroll"><table><thead><tr><th></th><th class="n">Today</th><th class="n">Jan 2027</th><th class="n">Change</th></tr></thead><tbody>
+  ${[["Gross pay",now.oldG,jan.newG],["PAYE",-dNow.paye,-dJan.paye],["SHIF (2.75%)",-dNow.shif,-dJan.shif],["Housing Levy (1.5%)",-dNow.ahl,-dJan.ahl]].concat(o.nssf?[["NSSF",-dNow.nssf,-dJan.nssf]]:[]).concat(o.penr?[["Pension",-dNow.pen,-dJan.pen]]:[]).concat([["Union dues (2% of basic)",-dNow.union,-dJan.union]]).map(([k,x,y])=>`<tr><td>${k}</td><td class="n">${fmt(x)}</td><td class="n">${fmt(y)}</td><td class="n">${fmtS(y-x)}</td></tr>`).join("")}
+  <tr class="tot"><td>Est. take-home</td><td class="n">${fmt(dNow.net)}</td><td class="n">${fmt(dJan.net)}</td><td class="n pos">${fmtS(dJan.net-dNow.net)}</td></tr>
+  </tbody></table></div>
+  <p class="note">About ${Math.round(100*(dJan.net-dNow.net)/Math.max(1,jan.newG-now.oldG))} cents of each extra shilling reaches you. SACCO and loans excluded.</p></section>`;
+
+  // 5. gain explained
+  h += `<section class="card"><h2><span class="sec-num">4</span>Where the increase comes from (January 2027)</h2>
+  <p class="lead">Your monthly gross rises <b>${fmt(jan.newG - jan.oldG)}</b> over the same grade and notch on 2024/25 terms.</p>
+  <div class="bar">${parts.map(p=>`<div style="width:${100*p[0]/ptot}%;background:${p[1]}" title="${p[2]}"></div>`).join("")}</div>
+  <div class="legend">${parts.map(p=>`<span><i style="background:${p[1]}"></i>${p[2]}: <b>${fmt(p[0])}</b></span>`).join("")}</div>
+  <p class="note">Basic at ${jan.g} notch ${jan.n} rises ${(100*(jan.newB/jan.oldB-1)).toFixed(1)}% over two years, against 7.1% from the 3.5% raise alone. Higher notches gain more.</p></section>`;
+
+  // 6. cumulative
+  h += `<section class="card"><h2><span class="sec-num">5</span>Total gain over the agreement, Jul 2025 – Jun 2029</h2>
+  <p class="lead">Extra gross pay compared with staying on 2024/25 terms.</p>
+  <div class="scroll"><table><thead><tr><th>Financial year</th><th>Grade · notch (Jul)</th><th class="n">Extra gross in year</th></tr></thead><tbody>
+  ${R.fyGain.map((v,i)=>`<tr><td>${FY[i]}</td><td>${label(rows[i*12])}</td><td class="n">${fmt(v)}</td></tr>`).join("")}
+  <tr class="tot"><td>Total, 4 years</td><td></td><td class="n">${fmt(R.total)}</td></tr></tbody></table></div></section>`;
+
+  // assumptions + detail
+  const assum=[];
+  if(o.cc===null) assum.push("No commuter amount entered, so no commuter arrears.");
+  else if(o.cc>=COMMUTER) assum.push("Your commuter rate is kept.");
+  else assum.push(`Commuter: ${fmt(o.cc)} → KES 18,000 ${o.cph==="full"?"from Jul 2025":"over 3 years"}.`);
+  if(!o.ha) assum.push("No house allowance entered.");
+  assum.push("Leave and Book &amp; ICT allowances excluded.");
+  if(assum.length) h += `<div class="assume"><b>Assumptions</b><ul>${assum.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+
+  h += `<section class="card"><details><summary>Month-by-month detail</summary>
+  <div class="scroll" style="margin-top:10px"><table><thead><tr><th>Month</th><th>Grade · notch</th><th class="n">Paid now (2024/25)</th><th class="n">New terms</th><th class="n">Difference</th></tr></thead><tbody>
+  ${rows.map(r=>`<tr class="${r.m===M_JAN27?'hl':''}"><td>${mLabel(r.m)}</td><td>${label(r)}</td><td class="n">${fmt(r.oldG)}</td><td class="n">${fmt(r.newG)}</td><td class="n">${fmtS(r.diff)}</td></tr>`).join("")}
+  </tbody></table></div></details>
+  <details style="margin-top:10px"><summary>Schedule I salary table for your grade (${jan.g})</summary>
+  <div class="scroll" style="margin-top:10px"><table><thead><tr><th>Notch</th><th class="n">2024/25</th><th class="n">2025/26</th><th class="n">2026/27</th><th class="n">2027/28</th><th class="n">2028/29</th></tr></thead><tbody>
+  ${T[jan.g].map((r,i)=>`<tr class="${i+1===jan.n?'hl':''}"><td>${i+1}</td>${r.map(v=>`<td class="n">${v.toLocaleString("en-KE")}</td>`).join("")}</tr>`).join("")}
+  </tbody></table></div>
+  <p class="note">Commuter KES 18,000 (all grades)${PROF[jan.g]?`; professorial ${fmt(PROF[jan.g])}`:""}.</p></details>
+  <div style="margin-top:14px"><button class="copy" id="copyBtn">Copy my summary</button> <span id="copyMsg" class="hint"></span></div>
+  </section>`;
+
+  $("out").innerHTML = h;
+  $("copyBtn").onclick = async () => {
+    const txt = `CBA 2025–2029 estimate (DEMO, unofficial)
+Start: ${o.g0} notch ${o.n0} (Jul 2025)
+Today gross: ${fmt(now.oldG)} | Jan 2027 gross: ${fmt(jan.newG)} (${label(jan)})
+Arrears 2025/26: ${fmt(R.arr2526)} = 3 x ${fmt(R.instal)} (est. take-home ${fmt(R.instNet.net)} each)
+Arrears Jul–Dec 2026: ${fmt(R.arrJulDec26)} (est. take-home ${fmt(R.lumpNet.net)})
+Total gain Jul 2025–Jun 2029: ${fmt(R.total)}`;
+    try{ await navigator.clipboard.writeText(txt); $("copyMsg").textContent="Copied."; }
+    catch(e){ $("copyMsg").textContent="Couldn't copy here. Select the figures above instead."; }
+  };
+}
+
+function syncPromo(){ ["p1","p2"].forEach(p=>{ $(p+"f").style.display = $(p+"on").checked ? "" : "none"; }); }
+document.querySelectorAll("select,input").forEach(el=>{ el.addEventListener("input",()=>{ syncPromo(); compute(); }); el.addEventListener("change",()=>{ syncPromo(); compute(); }); });
+syncPromo(); compute();
+</script>
+</body>
+</html>
