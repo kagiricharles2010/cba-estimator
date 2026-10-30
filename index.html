@@ -58,6 +58,21 @@ td.n,th.n{text-align:right;white-space:nowrap}
 tr.hl td{background:var(--green-soft);font-weight:600}
 tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .scroll{overflow-x:auto}
+@media (max-width:620px){
+  .card{padding:16px 14px}
+  table{font-size:13.5px}
+  th,td{padding:7px 5px}
+  table.sched{font-size:11px}
+  table.sched th,table.sched td{padding:6px 2px}
+  table.stack thead{display:none}
+  table.stack tr{display:block;padding:10px 0;border-bottom:1px solid var(--line)}
+  table.stack td{display:flex;justify-content:space-between;gap:12px;border:0;padding:2px 4px;text-align:right}
+  table.stack td::before{content:attr(data-l);color:var(--muted);font-weight:400;text-align:left}
+  table.stack td.ttl{display:block;font-weight:700;text-align:left;padding-bottom:4px}
+  table.stack td.ttl::before{content:none}
+  table.stack tr.hl{background:var(--green-soft);border-radius:6px}
+  table.stack tr.hl td{background:none}
+}
 .pos{color:var(--pos)} .neg{color:var(--red)}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media (max-width:620px){.split{grid-template-columns:1fr}}
@@ -184,6 +199,7 @@ const M_NOW = 15, M_JAN27 = 18; // Oct 2026, Jan 2027 (index from Jul 2025)
 
 const $ = id => document.getElementById(id);
 const fmt = v => (v<0?"−":"") + "KES " + Math.round(Math.abs(v)).toLocaleString("en-KE");
+const fmtN = v => (v<0?"−":"") + Math.round(Math.abs(v)).toLocaleString("en-KE");
 const fmtS = v => (v>0?"+":v<0?"−":"") + Math.round(Math.abs(v)).toLocaleString("en-KE");
 const mLabel = m => { const cm=(6+m)%12, y=2025+Math.floor((6+m)/12); return MONTHS[cm].slice(0,3)+" "+y; };
 const idxFromMonthInput = s => { if(!s) return null; const [y,mo]=s.split("-").map(Number); return (y-2025)*12 + (mo-7); };
@@ -312,10 +328,10 @@ function render(R){
   // 1. monthly gross by year
   h += `<section class="card"><h2><span class="sec-num">1</span>Monthly pay by year</h2>
   <p class="lead">New-scale pay compared with what you're paid today.</p>
-  <div class="scroll"><table><thead><tr><th>When</th><th>Grade · notch</th><th class="n">Basic</th><th class="n">Allowances</th><th class="n">Gross / month</th><th class="n">Est. net</th></tr></thead><tbody>`;
+  <div class="scroll"><table class="stack"><thead><tr><th>When</th><th>Grade · notch</th><th class="n">Basic</th><th class="n">Allowances</th><th class="n">Gross / month</th><th class="n">Est. net</th></tr></thead><tbody>`;
   snaps.forEach(s=>{
     const b = s.old? s.r.oldB : s.r.newB, a = s.old? s.r.oldA : s.r.newA, gsum=b+a;
-    h += `<tr class="${s.hl?'hl':''}"><td>${s.t}</td><td>${label(s.r)}</td><td class="n">${fmt(b)}</td><td class="n">${fmt(a)}</td><td class="n">${fmt(gsum)}</td><td class="n">${fmt(deductions(gsum,b,o).net)}</td></tr>`;
+    h += `<tr class="${s.hl?'hl':''}"><td class="ttl">${s.t}</td><td data-l="Grade · notch">${label(s.r)}</td><td class="n" data-l="Basic">${fmt(b)}</td><td class="n" data-l="Allowances">${fmt(a)}</td><td class="n" data-l="Gross / month">${fmt(gsum)}</td><td class="n" data-l="Est. net">${fmt(deductions(gsum,b,o).net)}</td></tr>`;
   });
   h += `</tbody></table></div>
   <p class="note">Allowances: commuter${o.ha?", house":""}${PROF[jan.g]?", professorial":""}.</p></section>`;
@@ -349,9 +365,9 @@ function render(R){
   // 4. net pay
   h += `<section class="card"><h2><span class="sec-num">3</span>Take-home pay: today vs January 2027</h2>
   <p class="lead">After PAYE, SHIF, Housing Levy${o.nssf?", NSSF":""}${o.penr?`, pension (${(o.penr*100).toFixed(1)}%)`:""} and union dues (2%).</p>
-  <div class="scroll"><table><thead><tr><th></th><th class="n">Today</th><th class="n">Jan 2027</th><th class="n">Change</th></tr></thead><tbody>
-  ${[["Gross pay",now.oldG,jan.newG],["PAYE",-dNow.paye,-dJan.paye],["SHIF (2.75%)",-dNow.shif,-dJan.shif],["Housing Levy (1.5%)",-dNow.ahl,-dJan.ahl]].concat(o.nssf?[["NSSF",-dNow.nssf,-dJan.nssf]]:[]).concat(o.penr?[["Pension",-dNow.pen,-dJan.pen]]:[]).concat([["Union dues (2% of basic)",-dNow.union,-dJan.union]]).map(([k,x,y])=>`<tr><td>${k}</td><td class="n">${fmt(x)}</td><td class="n">${fmt(y)}</td><td class="n">${fmtS(y-x)}</td></tr>`).join("")}
-  <tr class="tot"><td>Est. take-home</td><td class="n">${fmt(dNow.net)}</td><td class="n">${fmt(dJan.net)}</td><td class="n pos">${fmtS(dJan.net-dNow.net)}</td></tr>
+  <div class="scroll"><table><thead><tr><th>KES / month</th><th class="n">Today</th><th class="n">Jan 2027</th><th class="n">Change</th></tr></thead><tbody>
+  ${[["Gross pay",now.oldG,jan.newG],["PAYE",-dNow.paye,-dJan.paye],["SHIF",-dNow.shif,-dJan.shif],["Housing Levy",-dNow.ahl,-dJan.ahl]].concat(o.nssf?[["NSSF",-dNow.nssf,-dJan.nssf]]:[]).concat(o.penr?[["Pension",-dNow.pen,-dJan.pen]]:[]).concat([["Union dues (2%)",-dNow.union,-dJan.union]]).map(([k,x,y])=>`<tr><td>${k}</td><td class="n">${fmtN(x)}</td><td class="n">${fmtN(y)}</td><td class="n">${fmtS(y-x)}</td></tr>`).join("")}
+  <tr class="tot"><td>Est. take-home</td><td class="n">${fmtN(dNow.net)}</td><td class="n">${fmtN(dJan.net)}</td><td class="n pos">${fmtS(dJan.net-dNow.net)}</td></tr>
   </tbody></table></div>
   <p class="note">About ${Math.round(100*(dJan.net-dNow.net)/Math.max(1,jan.newG-now.oldG))} cents of each extra shilling reaches you. SACCO and loans excluded.</p></section>`;
 
@@ -379,11 +395,11 @@ function render(R){
   if(assum.length) h += `<div class="assume"><b>Assumptions</b><ul>${assum.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
 
   h += `<section class="card"><details><summary>Month-by-month detail</summary>
-  <div class="scroll" style="margin-top:10px"><table><thead><tr><th>Month</th><th>Grade · notch</th><th class="n">Paid now (2024/25)</th><th class="n">New terms</th><th class="n">Difference</th></tr></thead><tbody>
-  ${rows.map(r=>`<tr class="${r.m===M_JAN27?'hl':''}"><td>${mLabel(r.m)}</td><td>${label(r)}</td><td class="n">${fmt(r.oldG)}</td><td class="n">${fmt(r.newG)}</td><td class="n">${fmtS(r.diff)}</td></tr>`).join("")}
+  <div class="scroll" style="margin-top:10px"><table><thead><tr><th>Month</th><th>Grade · notch</th><th class="n">Old (KES)</th><th class="n">New (KES)</th><th class="n">Diff.</th></tr></thead><tbody>
+  ${rows.map(r=>`<tr class="${r.m===M_JAN27?'hl':''}"><td>${mLabel(r.m)}</td><td>${label(r)}</td><td class="n">${fmtN(r.oldG)}</td><td class="n">${fmtN(r.newG)}</td><td class="n">${fmtS(r.diff)}</td></tr>`).join("")}
   </tbody></table></div></details>
   <details style="margin-top:10px"><summary>Schedule I salary table for your grade (${jan.g})</summary>
-  <div class="scroll" style="margin-top:10px"><table><thead><tr><th>Notch</th><th class="n">2024/25</th><th class="n">2025/26</th><th class="n">2026/27</th><th class="n">2027/28</th><th class="n">2028/29</th></tr></thead><tbody>
+  <div class="scroll" style="margin-top:10px"><table class="sched"><thead><tr><th>Notch</th><th class="n">2024/25</th><th class="n">2025/26</th><th class="n">2026/27</th><th class="n">2027/28</th><th class="n">2028/29</th></tr></thead><tbody>
   ${T[jan.g].map((r,i)=>`<tr class="${i+1===jan.n?'hl':''}"><td>${i+1}</td>${r.map(v=>`<td class="n">${v.toLocaleString("en-KE")}</td>`).join("")}</tr>`).join("")}
   </tbody></table></div>
   <p class="note">Commuter KES 18,000 (all grades)${PROF[jan.g]?`; professorial ${fmt(PROF[jan.g])}`:""}.</p></details>
