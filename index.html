@@ -86,6 +86,15 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .bar div{height:100%}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px}
 .legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.gbars{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+.gb{display:grid;grid-template-columns:120px 1fr 120px;align-items:center;gap:12px}
+.gb-l{display:flex;flex-direction:column;font-size:13.5px;line-height:1.3}
+.gb-l span{color:var(--muted);font-size:12.5px}
+.gb-t{height:22px;background:#eef1ef;border-radius:4px;overflow:hidden}
+.gb-f{height:100%;background:var(--green);border-radius:4px}
+.gb-v{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:14px}
+.gb-tot{display:flex;justify-content:space-between;border-top:2px solid var(--ink);margin-top:14px;padding-top:8px;font-weight:700}
+@media (max-width:620px){.gb{grid-template-columns:1fr auto;row-gap:4px}.gb-t{grid-column:1 / -1;grid-row:2}.gb-l{flex-direction:row;gap:8px;align-items:baseline}}
 .note{font-size:13px;color:var(--muted);margin-top:10px}
 .assume{background:var(--amber-soft);border:1px solid #ecd9ae;border-radius:8px;padding:10px 14px;font-size:13.5px;color:#5c3a00}
 .assume ul{margin:6px 0 0;padding-left:18px}
@@ -311,12 +320,6 @@ function render(R){
     {t:"From Jul 2028 (2028/29 rates)", r:rows[36]},
   ];
 
-  // gain decomposition for Jan 2027 (two years of 3.5% on notch 1)
-  const atb = jan.oldB*(Math.pow(1.035,2)-1);
-  const notchPart = jan.newB - jan.oldB - atb;
-  const allowPart = jan.newA - jan.oldA;
-  const parts = [[atb,"#1f5a43","3.5% a year, across the board"],[notchPart,"#6aa88a","Wider gap between notches (4% → 5%)"],[allowPart,"#d9a441","Allowances"]].filter(p=>p[0]>0.5);
-  const ptot = parts.reduce((s,p)=>s+p[0],0)||1;
 
   let h = "";
   h += `<div class="kpis">
@@ -371,19 +374,15 @@ function render(R){
   </tbody></table></div>
   <p class="note">About ${Math.round(100*(dJan.net-dNow.net)/Math.max(1,jan.newG-now.oldG))} cents of each extra shilling reaches you. SACCO and loans excluded.</p></section>`;
 
-  // 5. gain explained
-  h += `<section class="card"><h2><span class="sec-num">4</span>Where the increase comes from (January 2027)</h2>
-  <p class="lead">Your monthly gross rises <b>${fmt(jan.newG - jan.oldG)}</b> over the same grade and notch on 2024/25 terms.</p>
-  <div class="bar">${parts.map(p=>`<div style="width:${100*p[0]/ptot}%;background:${p[1]}" title="${p[2]}"></div>`).join("")}</div>
-  <div class="legend">${parts.map(p=>`<span><i style="background:${p[1]}"></i>${p[2]}: <b>${fmt(p[0])}</b></span>`).join("")}</div>
-  <p class="note">Basic at ${jan.g} notch ${jan.n} rises ${(100*(jan.newB/jan.oldB-1)).toFixed(1)}% over two years, against 7.1% from the 3.5% raise alone. Higher notches gain more.</p></section>`;
-
-  // 6. cumulative
-  h += `<section class="card"><h2><span class="sec-num">5</span>Total gain over the agreement, Jul 2025 – Jun 2029</h2>
-  <p class="lead">Extra gross pay compared with staying on 2024/25 terms.</p>
-  <div class="scroll"><table><thead><tr><th>Financial year</th><th>Grade · notch (Jul)</th><th class="n">Extra gross in year</th></tr></thead><tbody>
-  ${R.fyGain.map((v,i)=>`<tr><td>${FY[i]}</td><td>${label(rows[i*12])}</td><td class="n">${fmt(v)}</td></tr>`).join("")}
-  <tr class="tot"><td>Total, 4 years</td><td></td><td class="n">${fmt(R.total)}</td></tr></tbody></table></div></section>`;
+  // 4. cumulative, as bars
+  const gmax = Math.max(1, ...R.fyGain);
+  h += `<section class="card"><h2><span class="sec-num">4</span>Total gain over the agreement, Jul 2025 – Jun 2029</h2>
+  <p class="lead">Extra gross pay each year compared with staying on 2024/25 terms.</p>
+  <div class="gbars">${R.fyGain.map((v,i)=>`<div class="gb">
+    <div class="gb-l"><b>${FY[i]}</b><span>${label(rows[i*12])}</span></div>
+    <div class="gb-t"><div class="gb-f" style="width:${Math.max(0,100*v/gmax)}%"></div></div>
+    <div class="gb-v">${fmt(v)}</div></div>`).join("")}</div>
+  <div class="gb-tot"><span>Total, 4 years</span><span>${fmt(R.total)}</span></div></section>`;
 
   // assumptions + detail
   const assum=[];
