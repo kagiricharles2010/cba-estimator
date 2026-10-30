@@ -145,6 +145,14 @@ footer p{margin:0 0 10px}
       <label for="p2n">New notch</label><select id="p2n"></select>
     </div>
 
+    <h3>Leaving the university</h3>
+    <label class="chk"><input type="checkbox" id="lvon"> I left, or will leave, during the CBA period</label>
+    <div id="lvf" class="sub-fields">
+      <label for="lvd">Last month worked</label>
+      <input type="month" id="lvd" min="2025-07" max="2029-06" value="2026-06">
+      <p class="hint">Retirement, resignation, end of contract or transfer.</p>
+    </div>
+
     <h3>Allowances now</h3>
     <label for="cc">Commuter (KES/month)</label>
     <input type="number" id="cc" min="0" step="100" placeholder="e.g. 12,000">
@@ -188,6 +196,8 @@ footer p{margin:0 0 10px}
       <li>Items still under negotiation (due 28 Feb 2027).</li>
       <li>Restored strike-period pay (Sept–Oct 2026).</li>
       <li>SACCO, loans, HELB and other voluntary deductions.</li>
+      <li>Gratuity for contract staff (set pension to 0% if you have none).</li>
+      <li>Effects on pension or retirement benefits for staff who have left.</li>
     </ul>
     <p><b>Assumed:</b> house allowance doesn't change; increments continue each year in the month you choose; promotions start at the grade and notch you enter; arrears are taxed in the month they're paid. KRA lets you spread arrears tax back over earlier years, which can lower it. Universities already paying above these rates keep their rates.</p>
     <p><b>Source:</b> Return to Work Formula, IPUCCF (FKE) and UASU, 30 Oct 2026. Clauses 8–12, Schedules I and II. Where your copy differs, your copy is right.</p>
@@ -264,6 +274,8 @@ function compute(){
     o.promos.push({m, g:$(p+"g").value, n:+$(p+"n").value, k});
   });
   o.promos.sort((a,b)=>a.m-b.m);
+  let exitM = 47;
+  if($("lvon").checked){ const m=idxFromMonthInput($("lvd").value); if(m===null||m<0||m>47) errs.push("Leaving: pick a month between Jul 2025 and Jun 2029."); else exitM=m; }
   let prevRank = RANK[o.g0];
   o.promos.forEach(p=>{ if(RANK[p.g] <= prevRank) errs.push(`Promotion ${p.k}: the new grade should be higher than the previous one.`); prevRank = Math.max(prevRank, RANK[p.g]); });
   $("err").textContent = errs.join(" ");
@@ -283,7 +295,8 @@ function compute(){
     const oldB=T[g][n-1][0], newB=T[g][n-1][fy+1];
     const oldA = curC + o.ha + oldProf(g);
     const newA = newC(fy) + o.ha + (PROF[g]||0);
-    rows.push({m, fy, g, n, oldB, newB, oldA, newA, oldG:oldB+oldA, newG:newB+newA, diff:(newB+newA)-(oldB+oldA)});
+    const on = m<=exitM;
+    rows.push({m, fy, g, n, on, oldB, newB, oldA, newA, oldG:oldB+oldA, newG:newB+newA, diff: on ? (newB+newA)-(oldB+oldA) : 0});
   }
   const sum = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+r.diff,0);
   const arr2526 = sum(0,12);
@@ -295,15 +308,18 @@ function compute(){
   const now = rows[M_NOW], jan = rows[M_JAN27];
   const dNow = deductions(now.oldG,now.oldB,o), dJan = deductions(jan.newG,jan.newB,o);
   const instal = arr2526/3;
-  const sumB = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+(r.newB-r.oldB),0);
+  const sumB = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+(r.on?r.newB-r.oldB:0),0);
   // arrears taxed on top of the January 2027 salary; pension on the basic part; 2% union fee on all arrears
-  const withArr = (arr, arrB) => { arr=Math.max(0,arr); arrB=Math.max(0,Math.min(arrB,arr));
-    const d0=deductions(jan.newG,jan.newB,o), d1=deductions(jan.newG+arr,jan.newB+arrB,o); const union=arr*0.02;
+  const withArr = (arr, arrB, bG=jan.newG, bB=jan.newB) => { arr=Math.max(0,arr); arrB=Math.max(0,Math.min(arrB,arr));
+    const d0=deductions(bG,bB,o), d1=deductions(bG+arr,bB+arrB,o); const union=arr*0.02;
     return {gross:arr, paye:d1.paye-d0.paye, shif:d1.shif-d0.shif, ahl:d1.ahl-d0.ahl, nssf:d1.nssf-d0.nssf, pen:d1.pen-d0.pen, union, net:(d1.netPre-d0.netPre)-union}; };
   const instNet = withArr(instal, sumB(0,12)/3);
   const lumpNet = withArr(arrJulDec26, sumB(12,18));
 
-  render({o,rows,arr2526,arrJulDec26,fyGain,total,now,jan,dNow,dJan,instal,instNet,lumpNet,curC,newC});
+  // leavers before January 2027: one lump sum, taxed on top of their last (2024/25-terms) salary
+  const early = exitM < M_JAN27, last = rows[exitM];
+  const leaverNet = withArr(arr2526+arrJulDec26, sumB(0,exitM+1), last.oldG, last.oldB);
+  render({o,exitM,early,last,leaverNet,rows,arr2526,arrJulDec26,fyGain,total,now,jan,dNow,dJan,instal,instNet,lumpNet,curC,newC});
 }
 
 function line(l,v,cls=""){ return `<div class="ln ${cls}"><span>${l}</span><span>${v}</span></div>`; }
@@ -311,6 +327,7 @@ function line(l,v,cls=""){ return `<div class="ln ${cls}"><span>${l}</span><span
 function render(R){
   const {o,rows,now,jan,dNow,dJan} = R;
   const label = r => `${r.g} · notch ${r.n}`;
+  if(R.early){ renderLeaver(R, label); return; }
   const snaps = [
     {t:"Today, Oct 2026 (2024/25 terms)", r:now, old:true},
     {t:"From Jul 2025 (2025/26 rates)", r:rows[0]},
@@ -318,7 +335,7 @@ function render(R){
     {t:"Jan 2027 — first payslip on new terms", r:jan, hl:true},
     {t:"From Jul 2027 (2027/28 rates)", r:rows[24]},
     {t:"From Jul 2028 (2028/29 rates)", r:rows[36]},
-  ];
+  ].filter(s=>s.r.m<=R.exitM);
 
 
   let h = "";
@@ -375,29 +392,74 @@ function render(R){
   <p class="note">About ${Math.round(100*(dJan.net-dNow.net)/Math.max(1,jan.newG-now.oldG))} cents of each extra shilling reaches you. SACCO and loans excluded.</p></section>`;
 
   // 4. cumulative, as bars
-  const gmax = Math.max(1, ...R.fyGain);
-  h += `<section class="card"><h2><span class="sec-num">4</span>Total gain over the agreement, Jul 2025 – Jun 2029</h2>
+  const nFY = Math.floor(R.exitM/12)+1, gains = R.fyGain.slice(0,nFY);
+  const gmax = Math.max(1, ...gains);
+  h += `<section class="card"><h2><span class="sec-num">4</span>Total gain over the agreement, Jul 2025 – ${R.exitM<47?mLabel(R.exitM):"Jun 2029"}</h2>
   <p class="lead">Extra gross pay each year compared with staying on 2024/25 terms.</p>
-  <div class="gbars">${R.fyGain.map((v,i)=>`<div class="gb">
+  <div class="gbars">${gains.map((v,i)=>`<div class="gb">
     <div class="gb-l"><b>${FY[i]}</b><span>${label(rows[i*12])}</span></div>
     <div class="gb-t"><div class="gb-f" style="width:${Math.max(0,100*v/gmax)}%"></div></div>
     <div class="gb-v">${fmt(v)}</div></div>`).join("")}</div>
-  <div class="gb-tot"><span>Total, 4 years</span><span>${fmt(R.total)}</span></div></section>`;
+  <div class="gb-tot"><span>Total${R.exitM<47?"":", 4 years"}</span><span>${fmt(R.total)}</span></div></section>`;
 
   // assumptions + detail
-  const assum=[];
-  if(o.cc===null) assum.push("No commuter amount entered, so no commuter arrears.");
-  else if(o.cc>=COMMUTER) assum.push("Your commuter rate is kept.");
-  else assum.push((o.cph==="full" ? `Commuter: ${fmt(o.cc)} → KES 18,000 from Jul 2025.` : `Commuter: ${fmt(o.cc)} → ${fmt(R.newC(0))} (2025/26), ${fmt(R.newC(1))} (2026/27), KES 18,000 from 2027/28.`));
-  if(!o.ha) assum.push("No house allowance entered.");
-  assum.push("Leave and Book &amp; ICT allowances excluded.");
-  if(assum.length) h += `<div class="assume"><b>Assumptions</b><ul>${assum.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+  h += assumBox(R);
 
 
   $("out").innerHTML = h;
 }
 
-function syncPromo(){ ["p1","p2"].forEach(p=>{ $(p+"f").style.display = $(p+"on").checked ? "" : "none"; }); }
+function assumBox(R){
+  const o=R.o;
+  const assum=[];
+  if(R.exitM<47) assum.push(`Pay counted up to ${mLabel(R.exitM)}, your last month.`);
+  if(o.cc===null) assum.push("No commuter amount entered, so no commuter arrears.");
+  else if(o.cc>=COMMUTER) assum.push("Your commuter rate is kept.");
+  else assum.push((o.cph==="full" ? `Commuter: ${fmt(o.cc)} → KES 18,000 from Jul 2025.` : `Commuter: ${fmt(o.cc)} → ${fmt(R.newC(0))} (2025/26), ${fmt(R.newC(1))} (2026/27), KES 18,000 from 2027/28.`));
+  if(!o.ha) assum.push("No house allowance entered.");
+  assum.push("Leave and Book &amp; ICT allowances excluded.");
+  return `<div class="assume"><b>Assumptions</b><ul>${assum.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+}
+
+function renderLeaver(R, label){
+  const {o,rows,last} = R, e=R.exitM, L=R.leaverNet;
+  const a1 = rows.slice(0,Math.min(12,e+1)).reduce((s,r)=>s+r.diff,0);
+  const a2 = R.arr2526 + R.arrJulDec26 - a1;
+  const tot = R.arr2526 + R.arrJulDec26;
+  let h = `<div class="kpis">
+    <div class="kpi hl"><div class="k">Total arrears owed (gross)</div><div class="v">${fmt(tot)}</div><div class="s">Jul 2025 – ${mLabel(e)} · ${e+1} months</div></div>
+    <div class="kpi"><div class="k">Estimated take-home</div><div class="v">${fmt(L.net)}</div><div class="s">After tax, levies, pension and union fee</div></div>
+    <div class="kpi"><div class="k">Last salary (2024/25 terms)</div><div class="v">${fmt(last.oldG)}</div><div class="s">${mLabel(e)} · ${label(last)}</div></div>
+  </div>`;
+  const snaps = [
+    {t:`Last salary, ${mLabel(e)} (2024/25 terms)`, r:last, old:true},
+    {t:"From Jul 2025 (2025/26 rates)", r:rows[0]},
+    {t:"From Jul 2026 (2026/27 rates)", r:rows[12]},
+  ].filter(s=>s.r.m<=e);
+  h += `<section class="card"><h2><span class="sec-num">1</span>Your pay on the new scale</h2>
+  <p class="lead">What you should have been paid for the months you served.</p>
+  <div class="scroll"><table class="stack"><thead><tr><th>When</th><th>Grade · notch</th><th class="n">Basic</th><th class="n">Allowances</th><th class="n">Gross / month</th></tr></thead><tbody>
+  ${snaps.map(s=>{ const b=s.old?s.r.oldB:s.r.newB, a=s.old?s.r.oldA:s.r.newA; return `<tr><td class="ttl">${s.t}</td><td data-l="Grade · notch">${label(s.r)}</td><td class="n" data-l="Basic">${fmt(b)}</td><td class="n" data-l="Allowances">${fmt(a)}</td><td class="n" data-l="Gross / month">${fmt(b+a)}</td></tr>`; }).join("")}
+  </tbody></table></div></section>`;
+  h += `<section class="card"><h2><span class="sec-num">2</span>Arrears owed to you</h2>
+  <p class="lead">New rates minus what you were paid, for each month up to ${mLabel(e)}.</p>
+  <div class="box" style="max-width:460px">
+    ${line(`Jul 2025 – ${mLabel(Math.min(11,e))}`, fmt(a1))}
+    ${e>=12?line(`Jul 2026 – ${mLabel(e)}`, fmt(a2)):""}
+    ${line("<b>Total arrears</b>", "<b>"+fmt(tot)+"</b>")}
+    ${line("PAYE", "−"+fmt(L.paye),"m")}
+    ${line("SHIF + Housing Levy", "−"+fmt(L.shif+L.ahl),"m")}
+    ${L.nssf>0.5?line("NSSF", "−"+fmt(L.nssf),"m"):""}
+    ${L.pen>0.5?line("Pension", "−"+fmt(L.pen),"m"):""}
+    ${line("Union fee (2%)", "−"+fmt(L.union),"m")}
+    ${line("Estimated take-home", fmt(L.net),"t")}
+    <p class="note">Assumed paid as one sum and taxed alongside your last salary. The agreement doesn't say how or when leavers are paid.</p>
+  </div></section>`;
+  h += assumBox(R);
+  $("out").innerHTML = h;
+}
+
+function syncPromo(){ ["p1","p2","lv"].forEach(p=>{ $(p+"f").style.display = $(p+"on").checked ? "" : "none"; }); }
 document.querySelectorAll("select,input").forEach(el=>{ el.addEventListener("input",()=>{ syncPromo(); compute(); }); el.addEventListener("change",()=>{ syncPromo(); compute(); }); });
 syncPromo(); compute();
 </script>
