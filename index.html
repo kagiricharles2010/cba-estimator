@@ -161,7 +161,7 @@ footer p{margin:0 0 10px}
       <label class="chk"><input type="checkbox" id="nssf" checked> Deduct NSSF</label>
     </div>
     <div class="err" id="err"></div>
-    <p class="hint" style="margin-top:14px">Calculated in your browser. Nothing is stored or sent.</p>
+    <p class="hint" style="margin-top:14px">Visits are counted anonymously. Nothing you enter is stored or sent.</p>
   </section>
 
   <main class="outputs" id="out" aria-live="polite"></main>
@@ -402,5 +402,6 @@ function syncPromo(){ ["p1","p2"].forEach(p=>{ $(p+"f").style.display = $(p+"on"
 document.querySelectorAll("select,input").forEach(el=>{ el.addEventListener("input",()=>{ syncPromo(); compute(); }); el.addEventListener("change",()=>{ syncPromo(); compute(); }); });
 syncPromo(); compute();
 </script>
+<script data-goatcounter="https://kagiricharles.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>
