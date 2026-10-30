@@ -155,8 +155,8 @@ footer p{margin:0 0 10px}
       <input type="number" id="cp" min="0" placeholder="Blank = no change">
       <label for="cph">Commuter increase</label>
       <select id="cph">
+        <option value="phased" selected>Phased over 3 years</option>
         <option value="full">Full 18,000 from Jul 2025</option>
-        <option value="phased">Phased over 3 years</option>
       </select>
       <label class="chk"><input type="checkbox" id="nssf" checked> Deduct NSSF</label>
     </div>
@@ -389,7 +389,7 @@ function render(R){
   const assum=[];
   if(o.cc===null) assum.push("No commuter amount entered, so no commuter arrears.");
   else if(o.cc>=COMMUTER) assum.push("Your commuter rate is kept.");
-  else assum.push(`Commuter: ${fmt(o.cc)} → KES 18,000 ${o.cph==="full"?"from Jul 2025":"over 3 years"}.`);
+  else assum.push((o.cph==="full" ? `Commuter: ${fmt(o.cc)} → KES 18,000 from Jul 2025.` : `Commuter: ${fmt(o.cc)} → ${fmt(R.newC(0))} (2025/26), ${fmt(R.newC(1))} (2026/27), KES 18,000 from 2027/28.`));
   if(!o.ha) assum.push("No house allowance entered.");
   assum.push("Leave and Book &amp; ICT allowances excluded.");
   if(assum.length) h += `<div class="assume"><b>Assumptions</b><ul>${assum.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
