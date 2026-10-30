@@ -37,7 +37,7 @@ select:focus,input:focus{outline:2px solid var(--green);outline-offset:1px}
 .chk{display:flex;gap:8px;align-items:center;font-weight:500;margin:10px 0 0}
 .chk input{width:16px;height:16px;accent-color:var(--green)}
 .sub-fields{padding-left:24px}
-details.adv{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+
 details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--green)}
 .err{color:var(--red);font-size:13px;margin-top:8px}
 .outputs{display:flex;flex-direction:column;gap:18px}
@@ -149,8 +149,8 @@ footer p{margin:0 0 10px}
     <input type="number" id="penr" min="0" max="30" step="0.5" value="7.5">
     <p class="hint">Enter 0 if none. Union dues are fixed at 2% of basic.</p>
 
-    <details class="adv">
-      <summary>More options</summary>
+    <div class="adv">
+      <h3>Additional details</h3>
       <label for="cp">Professorial allowance now (KES/month)</label>
       <input type="number" id="cp" min="0" placeholder="Blank = no change">
       <label for="cph">Commuter increase</label>
@@ -159,7 +159,7 @@ footer p{margin:0 0 10px}
         <option value="phased">Phased over 3 years</option>
       </select>
       <label class="chk"><input type="checkbox" id="nssf" checked> Deduct NSSF</label>
-    </details>
+    </div>
     <div class="err" id="err"></div>
     <p class="hint" style="margin-top:14px">Calculated in your browser. Nothing is stored or sent.</p>
   </section>
@@ -394,29 +394,8 @@ function render(R){
   assum.push("Leave and Book &amp; ICT allowances excluded.");
   if(assum.length) h += `<div class="assume"><b>Assumptions</b><ul>${assum.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
 
-  h += `<section class="card"><details><summary>Month-by-month detail</summary>
-  <div class="scroll" style="margin-top:10px"><table><thead><tr><th>Month</th><th>Grade · notch</th><th class="n">Old (KES)</th><th class="n">New (KES)</th><th class="n">Diff.</th></tr></thead><tbody>
-  ${rows.map(r=>`<tr class="${r.m===M_JAN27?'hl':''}"><td>${mLabel(r.m)}</td><td>${label(r)}</td><td class="n">${fmtN(r.oldG)}</td><td class="n">${fmtN(r.newG)}</td><td class="n">${fmtS(r.diff)}</td></tr>`).join("")}
-  </tbody></table></div></details>
-  <details style="margin-top:10px"><summary>Schedule I salary table for your grade (${jan.g})</summary>
-  <div class="scroll" style="margin-top:10px"><table class="sched"><thead><tr><th>Notch</th><th class="n">2024/25</th><th class="n">2025/26</th><th class="n">2026/27</th><th class="n">2027/28</th><th class="n">2028/29</th></tr></thead><tbody>
-  ${T[jan.g].map((r,i)=>`<tr class="${i+1===jan.n?'hl':''}"><td>${i+1}</td>${r.map(v=>`<td class="n">${v.toLocaleString("en-KE")}</td>`).join("")}</tr>`).join("")}
-  </tbody></table></div>
-  <p class="note">Commuter KES 18,000 (all grades)${PROF[jan.g]?`; professorial ${fmt(PROF[jan.g])}`:""}.</p></details>
-  <div style="margin-top:14px"><button class="copy" id="copyBtn">Copy my summary</button> <span id="copyMsg" class="hint"></span></div>
-  </section>`;
 
   $("out").innerHTML = h;
-  $("copyBtn").onclick = async () => {
-    const txt = `CBA 2025–2029 estimate (DEMO, unofficial)
-Start: ${o.g0} notch ${o.n0} (Jul 2025)
-Today gross: ${fmt(now.oldG)} | Jan 2027 gross: ${fmt(jan.newG)} (${label(jan)})
-Arrears 2025/26: ${fmt(R.arr2526)} = 3 x ${fmt(R.instal)} (est. take-home ${fmt(R.instNet.net)} each)
-Arrears Jul–Dec 2026: ${fmt(R.arrJulDec26)} (est. take-home ${fmt(R.lumpNet.net)})
-Total gain Jul 2025–Jun 2029: ${fmt(R.total)}`;
-    try{ await navigator.clipboard.writeText(txt); $("copyMsg").textContent="Copied."; }
-    catch(e){ $("copyMsg").textContent="Couldn't copy here. Select the figures above instead."; }
-  };
 }
 
 function syncPromo(){ ["p1","p2"].forEach(p=>{ $(p+"f").style.display = $(p+"on").checked ? "" : "none"; }); }
