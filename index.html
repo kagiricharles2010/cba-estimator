@@ -515,6 +515,11 @@ function markUsed(e){
   if(!send()){ usedSent=true; let n=0; const t=setInterval(()=>{ if(send()||++n>20) clearInterval(t); },500); }
 }
 document.querySelectorAll("#g0,#n0,#im,select,input").forEach(el=>{ el.addEventListener("input",markUsed); el.addEventListener("change",markUsed); });
+// browsers (esp. mobile) refill the form from an earlier visit after scripts run, without firing input events.
+// Recalculate once the page has fully loaded and whenever it is shown again (back/forward, tab restore).
+function refreshAll(){ PAIRS.forEach(([gs,ns])=>fillNotches($(ns),$(gs).value)); syncPromo(); compute(); }
+window.addEventListener("load", ()=>setTimeout(refreshAll,0));
+window.addEventListener("pageshow", ()=>setTimeout(refreshAll,0));
 syncPromo(); compute();
 </script>
 <script data-goatcounter="https://kagiricharles.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
