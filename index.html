@@ -14,6 +14,7 @@
   --red:#a1281e; --pos:#1f6b3f;
 }
 *{box-sizing:border-box}
+[hidden]{display:none !important}
 html,body{margin:0}
 body{font-family:"Public Sans",system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;font-size:15px}
 .num,td.n,th.n{font-variant-numeric:tabular-nums}
@@ -82,6 +83,7 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .ln span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
 .ln.t{border-top:1px solid var(--ink);margin-top:4px;padding-top:6px;font-weight:700}
 .ln.m{color:var(--muted)}
+.hint.derived{color:var(--green);font-weight:600}
 .ln.sub{font-size:12.5px;padding:0 0 4px 12px}
 .bar{display:flex;height:24px;border-radius:4px;overflow:hidden;margin:10px 0 8px;background:#eef1ef}
 .bar div{height:100%}
@@ -132,13 +134,15 @@ footer p{margin:0 0 10px}
   <section class="card inputs" aria-label="Your details">
     <h2>Your details</h2>
     <h3 class="first">Starting point</h3>
-    <label for="g0">Grade on 1 Jul 2025</label>
+    <label for="g0" id="g0lbl">Grade on your Oct 2026 payslip</label>
     <select id="g0"></select>
-    <label for="n0">Notch on 1 Jul 2025</label>
+    <label for="n0" id="n0lbl">Basic pay on your Oct 2026 payslip</label>
     <select id="n0"></select>
-    <p class="hint">Amounts are 2024/25 basic pay. Match yours to your payslip.</p>
+    <p class="hint">Pick the amount shown on your payslip. Payslips are still on 2024/25 rates.</p>
+    <label class="chk" id="top12w" hidden><input type="checkbox" id="top12"> I was already on notch 12 before July 2025</label>
     <label for="im">Increment month</label>
     <select id="im"></select>
+    <p class="hint derived" id="derived"></p>
     <label for="ns">New salaries start</label>
     <select id="ns">
       <option value="16" selected>November 2026</option>
@@ -152,15 +156,29 @@ footer p{margin:0 0 10px}
     <div id="p1f" class="sub-fields">
       <label for="p1d">Effective month</label>
       <input type="month" placeholder="YYYY-MM" id="p1d" min="2025-07" max="2029-06" value="2026-07">
-      <label for="p1g">New grade</label><select id="p1g"></select>
-      <label for="p1n">New notch</label><select id="p1n"></select>
+      <div id="p1past">
+        <label for="p1pg">Grade before promotion</label><select id="p1pg"></select>
+        <label for="p1pn">Basic pay before promotion</label><select id="p1pn"></select>
+        <p class="hint">From your last payslip before the promotion. Your payslip above already shows the new grade.</p>
+      </div>
+      <div id="p1fut">
+        <label for="p1g">New grade</label><select id="p1g"></select>
+        <label for="p1n">New notch</label><select id="p1n"></select>
+      </div>
     </div>
     <label class="chk"><input type="checkbox" id="p2on"> Second promotion</label>
     <div id="p2f" class="sub-fields">
       <label for="p2d">Effective month</label>
       <input type="month" placeholder="YYYY-MM" id="p2d" min="2025-07" max="2029-06" value="2028-07">
-      <label for="p2g">New grade</label><select id="p2g"></select>
-      <label for="p2n">New notch</label><select id="p2n"></select>
+      <div id="p2past">
+        <label for="p2pg">Grade before promotion</label><select id="p2pg"></select>
+        <label for="p2pn">Basic pay before promotion</label><select id="p2pn"></select>
+        <p class="hint">From your last payslip before the promotion. Your payslip above already shows the new grade.</p>
+      </div>
+      <div id="p2fut">
+        <label for="p2g">New grade</label><select id="p2g"></select>
+        <label for="p2n">New notch</label><select id="p2n"></select>
+      </div>
     </div>
 
     <h3>Leaving the university</h3>
@@ -269,17 +287,23 @@ const numOrNull = id => { const v=$(id).value.replace(/[^0-9.]/g,""); if(v==="")
 
 function fillGrades(sel, def){ sel.innerHTML = GRADES.map(([g,t])=>`<option value="${g}">${g} – ${t}</option>`).join(""); sel.value=def; }
 function fillNotches(sel, g, def){ const keep = def ?? sel.value; sel.innerHTML = Array.from({length:12},(_,i)=>`<option value="${i+1}">Notch ${i+1} · KES ${T[g][i][0].toLocaleString("en-KE")}</option>`).join(""); sel.value=keep; }
-const PAIRS = [["g0","n0"],["p1g","p1n"],["p2g","p2n"]];
-fillGrades($("g0"),"12A"); fillNotches($("n0"),"12A","5");
+const PAIRS = [["g0","n0"],["p1g","p1n"],["p2g","p2n"],["p1pg","p1pn"],["p2pg","p2pn"]];
+fillGrades($("g0"),"12A"); fillNotches($("n0"),"12A","6");
+fillGrades($("p1pg"),"11A"); fillNotches($("p1pn"),"11A","6");
+fillGrades($("p2pg"),"12A"); fillNotches($("p2pn"),"12A","6");
 fillGrades($("p1g"),"13A"); fillNotches($("p1n"),"13A","1");
 fillGrades($("p2g"),"14A"); fillNotches($("p2n"),"14A","1");
 PAIRS.forEach(([gs,ns])=>$(gs).addEventListener("change",()=>fillNotches($(ns),$(gs).value)));
 const ORDER = ["10A","11A","12A","13A","14A","15A"];
 [["p1on","p1g","p1n","g0"],["p2on","p2g","p2n","p1g"]].forEach(([on,gs,ns,from])=>$(on).addEventListener("change",()=>{
-  if(!$(on).checked) return; const base = (from==="p1g" && !$("p1on").checked) ? $("g0").value : $(from).value;
+  if(!$(on).checked) return; const base = (from==="p1g" && !($("p1on").checked && !promoIsPast("p1"))) ? $("g0").value : $(from).value;
   if(RANK[$(gs).value] <= RANK[base]){ const up=ORDER[Math.min(5,RANK[base]+1)]; $(gs).value=up; fillNotches($(ns),up,"1"); }
 }));
 $("im").innerHTML = MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join(""); $("im").value="6";
+
+// The payslip we anchor on: Oct 2026 (M_NOW), or the last payslip for someone who left before then.
+function anchorM(){ if($("lvon").checked){ const m=idxFromMonthInput($("lvd").value); if(m!==null && m>=0 && m<M_NOW) return m; } return M_NOW; }
+function promoIsPast(p){ const m=idxFromMonthInput($(p+"d").value); return m!==null && m>=0 && m<=anchorM(); }
 
 // ---- statutory deductions (Oct 2026) ----
 function payeOn(taxable){
@@ -304,7 +328,7 @@ function deductions(gross, basic, o){
 // ---- main model ----
 function compute(){
   const o = {
-    g0:$("g0").value, n0:+$("n0").value, im:+$("im").value, sm:+$("ns").value,
+    gNow:$("g0").value, nNow:+$("n0").value, top12:$("top12").checked, im:+$("im").value, sm:+$("ns").value,
     promos:[], cc:numOrNull("cc"), ha:numOrNull("ha")||0,
     cp:numOrNull("cp"),
     cph:$("cph").value, nssf:$("nssf").checked, penr:Math.min(30,(numOrNull("penr")??0))/100
@@ -314,14 +338,29 @@ function compute(){
     if(!$(p+"on").checked) return;
     const m = idxFromMonthInput($(p+"d").value);
     if(m===null || m<0 || m>47){ errs.push(`Promotion ${k}: pick a month between Jul 2025 and Jun 2029.`); return; }
-    o.promos.push({m, g:$(p+"g").value, n:+$(p+"n").value, k});
+    o.promos.push({m, k, g:$(p+"g").value, n:+$(p+"n").value, pg:$(p+"pg").value, pn:+$(p+"pn").value});
   });
   o.promos.sort((a,b)=>a.m-b.m);
   let exitM = 47;
   if($("lvon").checked){ const m=idxFromMonthInput($("lvd").value); if(m===null||m<0||m>47) errs.push("Leaving: pick a month between Jul 2025 and Jun 2029."); else exitM=m; }
-  let prevRank = RANK[o.g0];
-  o.promos.forEach(p=>{ if(RANK[p.g] <= prevRank) errs.push(`Promotion ${p.k}: the new grade should be higher than the previous one.`); prevRank = Math.max(prevRank, RANK[p.g]); });
+  const A = Math.min(M_NOW, exitM);           // month of the payslip the user entered
+  const past = o.promos.filter(p=>p.m<=A), future = o.promos.filter(p=>p.m>A);
+
+  // Work backwards from the payslip to 1 Jul 2025. Each month: increment first, then any promotion.
+  const st = []; st[A] = {g:o.gNow, n:o.nNow};
+  let joinedLate = false;
+  for(let m=A; m>=1; m--){
+    const cur = st[m], pr = past.find(p=>p.m===m);
+    if(pr){ if(RANK[cur.g] <= RANK[pr.pg]) errs.push(`Promotion ${pr.k}: your grade before promotion should be lower than your grade after it.`); st[m-1] = {g:pr.pg, n:pr.pn}; continue; }
+    if((6+m)%12===o.im){ if(cur.n===12 && o.top12) st[m-1]={g:cur.g,n:12}; else { if(cur.n===1) joinedLate=true; st[m-1]={g:cur.g, n:Math.max(1,cur.n-1)}; } }
+    else st[m-1] = {...cur};
+  }
+  o.g0 = st[0].g; o.n0 = st[0].n;
+  let prevRank = RANK[st[A].g];
+  future.forEach(p=>{ if(RANK[p.g] <= prevRank) errs.push(`Promotion ${p.k}: the new grade should be higher than the previous one.`); prevRank = Math.max(prevRank, RANK[p.g]); });
   $("err").textContent = errs.join(" ");
+  $("derived").textContent = `So on 1 Jul 2025 you were on ${o.g0} notch ${o.n0} (KES ${T[o.g0][o.n0-1][0].toLocaleString("en-KE")}).`
+    + (joinedLate ? " If you joined after July 2025, figures before you joined don't apply." : "");
 
   // commuter
   const curC = o.cc===null ? COMMUTER : o.cc;
@@ -337,8 +376,11 @@ function compute(){
   const rows=[]; let g=o.g0, n=o.n0;
   for(let m=0;m<48;m++){
     const cal=(6+m)%12;
-    if(m>0 && cal===o.im) n=Math.min(12,n+1);
-    o.promos.filter(p=>p.m===m).forEach(p=>{ g=p.g; n=p.n; });
+    if(m<=A){ g=st[m].g; n=st[m].n; }
+    else {
+      if(cal===o.im) n=Math.min(12,n+1);
+      future.filter(p=>p.m===m).forEach(p=>{ g=p.g; n=p.n; });
+    }
     const fy=Math.floor(m/12);
     const oldB=T[g][n-1][0], newB=T[g][n-1][fy+1];
     const oldA = curC + o.ha + oldProf(g);
@@ -537,7 +579,19 @@ function renderLeaver(R, label){
   $("out").innerHTML = h;
 }
 
-function syncPromo(){ ["p1","p2","lv"].forEach(p=>{ $(p+"f").style.display = $(p+"on").checked ? "" : "none"; }); }
+// a past promotion's "before" grade defaults to one below the payslip grade
+// until the user picks it themselves, follow the payslip grade (one below)
+function fixPastDefaults(){ ["p1","p2"].forEach(p=>{ if(!$(p+"on").checked || !promoIsPast(p) || $(p+"pg").dataset.touched) return;
+  const dn=ORDER[Math.max(0,RANK[$("g0").value]-1)]; if($(p+"pg").value!==dn){ $(p+"pg").value=dn; fillNotches($(p+"pn"),dn); } }); }
+["p1pg","p2pg"].forEach(id=>$(id).addEventListener("change",e=>{ if(e.isTrusted) $(id).dataset.touched="1"; }));
+function syncPromo(){
+  fixPastDefaults();
+  ["p1","p2","lv"].forEach(p=>{ $(p+"f").style.display = $(p+"on").checked ? "" : "none"; });
+  ["p1","p2"].forEach(p=>{ const past=promoIsPast(p); $(p+"past").style.display = past?"":"none"; $(p+"fut").style.display = past?"none":""; });
+  const A=anchorM(), when = A===M_NOW ? "your Oct 2026 payslip" : `your last payslip (${mLabel(A)})`;
+  $("g0lbl").textContent = `Grade on ${when}`; $("n0lbl").textContent = `Basic pay on ${when}`;
+  $("top12w").hidden = $("n0").value!=="12";
+}
 document.querySelectorAll("select,input").forEach(el=>{ el.addEventListener("input",()=>{ syncPromo(); compute(); }); el.addEventListener("change",()=>{ syncPromo(); compute(); }); });
 
 // donate button: number assembled at runtime so it isn't plain text in the page
