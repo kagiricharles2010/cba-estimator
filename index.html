@@ -136,6 +136,13 @@ footer p{margin:0 0 10px}
     <p class="hint">Amounts are 2024/25 basic pay. Match yours to your payslip.</p>
     <label for="im">Increment month</label>
     <select id="im"></select>
+    <label for="ns">New salaries start</label>
+    <select id="ns">
+      <option value="16" selected>November 2026</option>
+      <option value="17">December 2026</option>
+      <option value="18">January 2027</option>
+    </select>
+    <p class="hint">The agreement says on or before 31 Jan 2027. Check with your chapter.</p>
 
     <h3>Promotions within CBA period (from July 2025)</h3>
     <label class="chk"><input type="checkbox" id="p1on"> First promotion</label>
@@ -196,7 +203,7 @@ footer p{margin:0 0 10px}
   <div class="card">
     <h2>Scope and disclaimer</h2>
     <p><b>Demo, not certified.</b> This tool is unofficial and has not been checked or endorsed by UASU, IPUCCF, FKE, the Ministry of Education, KRA or any university. The figures are estimates, not pay advice. Your payroll office and UASU chapter have the final word.</p>
-    <p><b>Included:</b> basic salary (Schedule I); commuter and professorial allowances (Schedule II); arrears from Jul 2025 to Dec 2026; PAYE, SHIF, Housing Levy, NSSF and pension; union dues at 2% of basic and of arrears.</p>
+    <p><b>Included:</b> basic salary (Schedule I); commuter and professorial allowances (Schedule II); arrears from Jul 2025 until new salaries start; PAYE, SHIF, Housing Levy, NSSF and pension; union dues at 2% of basic and of arrears.</p>
     <p><b>Not included:</b></p>
     <ul>
       <li>Leave and Book &amp; ICT allowances.</li>
@@ -237,12 +244,13 @@ const PROF  = {"15A":7500,"14A":6000};
 const COMMUTER = 18000;
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const FY = ["2025/26","2026/27","2027/28","2028/29"];
-const M_NOW = 15, M_JAN27 = 18; // Oct 2026, Jan 2027 (index from Jul 2025)
+const M_NOW = 15; // Oct 2026 (index from Jul 2025)
 
 const $ = id => document.getElementById(id);
 const fmt = v => (v<0?"−":"") + "KES " + Math.round(Math.abs(v)).toLocaleString("en-KE");
 const fmtN = v => (v<0?"−":"") + Math.round(Math.abs(v)).toLocaleString("en-KE");
 const fmtS = v => (v>0?"+":v<0?"−":"") + Math.round(Math.abs(v)).toLocaleString("en-KE");
+const mLong = m => MONTHS[(6+m)%12]+" "+(2025+Math.floor((6+m)/12));
 const mLabel = m => { const cm=(6+m)%12, y=2025+Math.floor((6+m)/12); return MONTHS[cm].slice(0,3)+" "+y; };
 const idxFromMonthInput = s => { if(!s) return null; const [y,mo]=s.split("-").map(Number); return (y-2025)*12 + (mo-7); };
 const numOrNull = id => { const v=$(id).value.trim(); return v==="" ? null : Math.max(0, Number(v)); };
@@ -284,7 +292,7 @@ function deductions(gross, basic, o){
 // ---- main model ----
 function compute(){
   const o = {
-    g0:$("g0").value, n0:+$("n0").value, im:+$("im").value,
+    g0:$("g0").value, n0:+$("n0").value, im:+$("im").value, sm:+$("ns").value,
     promos:[], cc:numOrNull("cc"), ha:numOrNull("ha")||0,
     cp:numOrNull("cp"),
     cph:$("cph").value, nssf:$("nssf").checked, penr:Math.min(30,(numOrNull("penr")??0))/100
@@ -323,24 +331,24 @@ function compute(){
   }
   const sum = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+r.diff,0);
   const arr2526 = sum(0,12);
-  const arrJulDec26 = sum(12,18);
+  const arrJulDec26 = sum(12,o.sm);
   const fyGain = [0,1,2,3].map(fy=>sum(fy*12,fy*12+12));
   const total = fyGain.reduce((a,b)=>a+b,0);
 
   // net figures
-  const now = rows[M_NOW], jan = rows[M_JAN27];
+  const now = rows[M_NOW], jan = rows[o.sm];
   const dNow = deductions(now.oldG,now.oldB,o), dJan = deductions(jan.newG,jan.newB,o);
   const instal = arr2526/3;
   const sumB = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+(r.on?r.newB-r.oldB:0),0);
-  // arrears taxed on top of the January 2027 salary; pension on the basic part; 2% union fee on all arrears
+  // arrears taxed on top of the first new-terms salary; pension on the basic part; 2% union fee on all arrears
   const withArr = (arr, arrB, bG=jan.newG, bB=jan.newB) => { arr=Math.max(0,arr); arrB=Math.max(0,Math.min(arrB,arr));
     const d0=deductions(bG,bB,o), d1=deductions(bG+arr,bB+arrB,o); const union=arr*0.02;
     return {gross:arr, paye:d1.paye-d0.paye, shif:d1.shif-d0.shif, ahl:d1.ahl-d0.ahl, nssf:d1.nssf-d0.nssf, pen:d1.pen-d0.pen, union, net:(d1.netPre-d0.netPre)-union}; };
   const instNet = withArr(instal, sumB(0,12)/3);
-  const lumpNet = withArr(arrJulDec26, sumB(12,18));
+  const lumpNet = withArr(arrJulDec26, sumB(12,o.sm));
 
-  // leavers before January 2027: one lump sum, taxed on top of their last (2024/25-terms) salary
-  const early = exitM < M_JAN27, last = rows[exitM];
+  // leavers before new salaries start: one lump sum, taxed on top of their last (2024/25-terms) salary
+  const early = exitM < o.sm, last = rows[exitM];
   const leaverNet = withArr(arr2526+arrJulDec26, sumB(0,exitM+1), last.oldG, last.oldB);
   render({o,exitM,early,last,leaverNet,rows,arr2526,arrJulDec26,fyGain,total,now,jan,dNow,dJan,instal,instNet,lumpNet,curC,newC});
 }
@@ -350,12 +358,13 @@ function line(l,v,cls=""){ return `<div class="ln ${cls}"><span>${l}</span><span
 function render(R){
   const {o,rows,now,jan,dNow,dJan} = R;
   const label = r => `${r.g} · notch ${r.n}`;
+  const S = mLabel(o.sm), SL = mLong(o.sm), A2 = `Jul – ${mLabel(o.sm-1).slice(0,3)} 2026`;
   if(R.early){ renderLeaver(R, label); return; }
   const snaps = [
     {t:"Today, Oct 2026 (2024/25 terms)", r:now, old:true},
     {t:"From Jul 2025 (2025/26 rates)", r:rows[0]},
     {t:"From Jul 2026 (2026/27 rates)", r:rows[12]},
-    {t:"Jan 2027 — first payslip on new terms", r:jan, hl:true},
+    {t:`${S} — first payslip on new terms`, r:jan, hl:true},
     {t:"From Jul 2027 (2027/28 rates)", r:rows[24]},
     {t:"From Jul 2028 (2028/29 rates)", r:rows[36]},
   ].filter(s=>s.r.m<=R.exitM);
@@ -363,9 +372,9 @@ function render(R){
 
   let h = "";
   h += `<div class="kpis">
-    <div class="kpi hl"><div class="k">January 2027 monthly gross</div><div class="v">${fmt(jan.newG)}</div><div class="s">${fmtS(jan.newG-now.oldG)} vs today · ${label(jan)}</div></div>
+    <div class="kpi hl"><div class="k">${SL} monthly gross</div><div class="v">${fmt(jan.newG)}</div><div class="s">${fmtS(jan.newG-now.oldG)} vs today · ${label(jan)}</div></div>
     <div class="kpi"><div class="k">Arrears Jul 2025 – Jun 2026 (gross)</div><div class="v">${fmt(R.arr2526)}</div><div class="s">3 instalments of ~${fmt(R.instal)}</div></div>
-    <div class="kpi"><div class="k">Arrears Jul – Dec 2026 (gross)</div><div class="v">${fmt(R.arrJulDec26)}</div><div class="s">Paid with the January 2027 salary</div></div>
+    <div class="kpi"><div class="k">Arrears ${A2} (gross)</div><div class="v">${fmt(R.arrJulDec26)}</div><div class="s">Paid with the ${SL} salary</div></div>
   </div>`;
 
   // 1. monthly gross by year
@@ -381,7 +390,7 @@ function render(R){
 
   // 2 + 3. arrears
   const a = R.instNet, l = R.lumpNet;
-  h += `<section class="card"><h2><span class="sec-num">2</span>Arrears and the January 2027 payment</h2>
+  h += `<section class="card"><h2><span class="sec-num">2</span>Arrears and the ${SL} payment</h2>
   <p class="lead">New rates minus what you were paid on 2024/25 terms.</p>
   <div class="split">
     <div class="box"><h4>2025/26 arrears (3 instalments)</h4>
@@ -395,9 +404,9 @@ function render(R){
       ${line("Take-home per instalment", fmt(a.net),"t")}
       <p class="note">Payment dates not yet set.</p>
     </div>
-    <div class="box"><h4>January 2027 payslip</h4>
-      ${line("January salary", fmt(jan.newG))}
-      ${line("Arrears, Jul – Dec 2026", fmt(R.arrJulDec26))}
+    <div class="box"><h4>${SL} payslip</h4>
+      ${line(`${MONTHS[(6+o.sm)%12]} salary`, fmt(jan.newG))}
+      ${line(`Arrears, ${A2}`, fmt(R.arrJulDec26))}
       ${line("<b>Total gross</b>", "<b>"+fmt(jan.newG+R.arrJulDec26)+"</b>")}
       ${line("Take-home: salary", fmt(dJan.net),"m")}
       ${line("Take-home: arrears", fmt(l.net),"m")}
@@ -414,7 +423,7 @@ function render(R){
   </tbody></table></div>
   <p class="note">SACCO and loans excluded.${extra||""}</p></section>`;
 
-  h += netTable(3, "Take-home pay: today vs January 2027", "Jan 2027", jan.newG, dJan);
+  h += netTable(3, `Take-home pay: today vs ${SL}`, S, jan.newG, dJan);
 
   const M_JAN29 = 42, endM = Math.min(M_JAN29, R.exitM), end = rows[endM], dEnd = deductions(end.newG, end.newB, o), endL = endM===M_JAN29 ? "January 2029" : mLabel(endM);
   h += netTable(4, `Take-home pay: today vs ${endL}`, endM===M_JAN29 ? "Jan 2029" : endL, end.newG, dEnd, " Tax rates may change depending on the government elected.");
