@@ -32,7 +32,7 @@ h3{font-size:14px;font-weight:700;margin:18px 0 2px;padding-top:14px;border-top:
 h3.first{border-top:0;padding-top:0;margin-top:8px}
 label{display:block;font-size:13.5px;font-weight:500;margin:10px 0 4px}
 .hint{font-size:12.5px;color:var(--muted);margin:4px 0 0}
-select,input[type=number],input[type=month]{width:100%;font:inherit;font-size:15px;padding:8px 10px;border:1px solid #c9cfcb;border-radius:6px;background:#fff;color:var(--ink)}
+select,input[type=text],input[type=number],input[type=month]{width:100%;font:inherit;font-size:15px;padding:8px 10px;border:1px solid #c9cfcb;border-radius:6px;background:#fff;color:var(--ink)}
 select:focus,input:focus{outline:2px solid var(--green);outline-offset:1px}
 .chk{display:flex;gap:8px;align-items:center;font-weight:500;margin:10px 0 0}
 .chk input{width:16px;height:16px;accent-color:var(--green)}
@@ -150,14 +150,14 @@ footer p{margin:0 0 10px}
     <label class="chk"><input type="checkbox" id="p1on"> First promotion</label>
     <div id="p1f" class="sub-fields">
       <label for="p1d">Effective month</label>
-      <input type="month" id="p1d" min="2025-07" max="2029-06" value="2026-07">
+      <input type="month" placeholder="YYYY-MM" id="p1d" min="2025-07" max="2029-06" value="2026-07">
       <label for="p1g">New grade</label><select id="p1g"></select>
       <label for="p1n">New notch</label><select id="p1n"></select>
     </div>
     <label class="chk"><input type="checkbox" id="p2on"> Second promotion</label>
     <div id="p2f" class="sub-fields">
       <label for="p2d">Effective month</label>
-      <input type="month" id="p2d" min="2025-07" max="2029-06" value="2028-07">
+      <input type="month" placeholder="YYYY-MM" id="p2d" min="2025-07" max="2029-06" value="2028-07">
       <label for="p2g">New grade</label><select id="p2g"></select>
       <label for="p2n">New notch</label><select id="p2n"></select>
     </div>
@@ -166,27 +166,27 @@ footer p{margin:0 0 10px}
     <label class="chk"><input type="checkbox" id="lvon"> I left, or will leave, during the CBA period</label>
     <div id="lvf" class="sub-fields">
       <label for="lvd">Last month worked</label>
-      <input type="month" id="lvd" min="2025-07" max="2029-06" value="2026-06">
+      <input type="month" placeholder="YYYY-MM" id="lvd" min="2025-07" max="2029-06" value="2026-06">
       <p class="hint">Retirement, resignation, end of contract or transfer.</p>
     </div>
 
     <h3>Allowances now</h3>
     <label for="cc">Commuter (KES/month)</label>
-    <input type="number" id="cc" min="0" step="100" placeholder="e.g. 12,000">
+    <input type="text" inputmode="numeric" id="cc" placeholder="e.g. 12,000" autocomplete="off">
     <p class="hint">Leave blank if 18,000 or more.</p>
     <label for="ha">House (KES/month)</label>
-    <input type="number" id="ha" min="0" step="100" placeholder="e.g. 50,000">
+    <input type="text" inputmode="numeric" id="ha" placeholder="e.g. 50,000" autocomplete="off">
     <p class="hint">Not changed by the agreement. Used for net pay only.</p>
 
     <h3>Deductions</h3>
     <label for="penr">Pension (% of basic)</label>
-    <input type="number" id="penr" min="0" max="30" step="0.5" value="7.5">
+    <input type="text" inputmode="decimal" id="penr" value="7.5" autocomplete="off">
     <p class="hint">Enter 0 if none. Union dues are fixed at 2% of basic.</p>
 
     <div class="adv">
       <h3>Additional details</h3>
       <label for="cp">Professorial allowance now (KES/month)</label>
-      <input type="number" id="cp" min="0" placeholder="Blank = no change">
+      <input type="text" inputmode="numeric" id="cp" placeholder="Blank = no change" autocomplete="off">
       <label for="cph">Commuter increase</label>
       <select id="cph">
         <option value="phased" selected>Phased over 3 years</option>
@@ -254,8 +254,15 @@ const fmtN = v => (v<0?"−":"") + Math.round(Math.abs(v)).toLocaleString("en-KE
 const fmtS = v => (v>0?"+":v<0?"−":"") + Math.round(Math.abs(v)).toLocaleString("en-KE");
 const mLong = m => MONTHS[(6+m)%12]+" "+(2025+Math.floor((6+m)/12));
 const mLabel = m => { const cm=(6+m)%12, y=2025+Math.floor((6+m)/12); return MONTHS[cm].slice(0,3)+" "+y; };
-const idxFromMonthInput = s => { if(!s) return null; const [y,mo]=s.split("-").map(Number); return (y-2025)*12 + (mo-7); };
-const numOrNull = id => { const v=$(id).value.trim(); return v==="" ? null : Math.max(0, Number(v)); };
+const idxFromMonthInput = s => {
+  s=(s||"").trim(); let y, mo, r;
+  if((r=s.match(/^(\d{4})[-\/.](\d{1,2})$/))) { y=+r[1]; mo=+r[2]; }
+  else if((r=s.match(/^(\d{1,2})[-\/.](\d{4})$/))) { y=+r[2]; mo=+r[1]; }
+  else if((r=s.match(/^([A-Za-z]{3,})[\s,.-]*(\d{4})$/))) { y=+r[2]; mo=MONTHS.findIndex(x=>x.toLowerCase().startsWith(r[1].slice(0,3).toLowerCase()))+1; }
+  if(!y || !(mo>=1 && mo<=12)) return null;
+  return (y-2025)*12 + (mo-7); };
+// accepts "12,000", "KES 12000", "7.5%": keeps digits and the decimal point only
+const numOrNull = id => { const v=$(id).value.replace(/[^0-9.]/g,""); if(v==="") return null; const x=parseFloat(v); return Number.isFinite(x) ? Math.max(0,x) : null; };
 
 function fillGrades(sel, def){ sel.innerHTML = GRADES.map(([g,t])=>`<option value="${g}">${g} – ${t}</option>`).join(""); sel.value=def; }
 function fillNotches(sel, g, def){ const keep = def ?? sel.value; sel.innerHTML = Array.from({length:12},(_,i)=>`<option value="${i+1}">Notch ${i+1} · KES ${T[g][i][0].toLocaleString("en-KE")}</option>`).join(""); sel.value=keep; }
@@ -266,7 +273,7 @@ fillGrades($("p2g"),"14A"); fillNotches($("p2n"),"14A","1");
 PAIRS.forEach(([gs,ns])=>$(gs).addEventListener("change",()=>fillNotches($(ns),$(gs).value)));
 const ORDER = ["10A","11A","12A","13A","14A","15A"];
 [["p1on","p1g","p1n","g0"],["p2on","p2g","p2n","p1g"]].forEach(([on,gs,ns,from])=>$(on).addEventListener("change",()=>{
-  if(!$(on).checked) return; const base=$(from).value;
+  if(!$(on).checked) return; const base = (from==="p1g" && !$("p1on").checked) ? $("g0").value : $(from).value;
   if(RANK[$(gs).value] <= RANK[base]){ const up=ORDER[Math.min(5,RANK[base]+1)]; $(gs).value=up; fillNotches($(ns),up,"1"); }
 }));
 $("im").innerHTML = MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join(""); $("im").value="6";
@@ -350,9 +357,11 @@ function compute(){
   const lumpNet = withArr(arrJulDec26, sumB(12,o.sm));
 
   // leavers before new salaries start: one lump sum, taxed on top of their last (2024/25-terms) salary
-  const early = exitM < o.sm, last = rows[exitM];
-  const leaverNet = withArr(arr2526+arrJulDec26, sumB(0,exitM+1), last.oldG, last.oldB);
-  render({o,exitM,early,last,leaverNet,rows,arr2526,arrJulDec26,fyGain,total,now,jan,pay,dPay,dNow,dJan,instal,instNet,lumpNet,curC,newC});
+  // anyone who leaves before January 2027 gets no January salary, so show the leaver view.
+  // Arrears stop when new salaries start (months after that were already paid at new rates).
+  const early = exitM < 18, last = rows[exitM], lastNew = exitM >= o.sm, aEnd = Math.min(exitM, o.sm-1);
+  const leaverNet = withArr(arr2526+arrJulDec26, sumB(0,aEnd+1), lastNew?last.newG:last.oldG, lastNew?last.newB:last.oldB);
+  render({o,exitM,early,last,lastNew,aEnd,leaverNet,rows,arr2526,arrJulDec26,fyGain,total,now,jan,pay,dPay,dNow,dJan,instal,instNet,lumpNet,curC,newC});
 }
 
 function line(l,v,cls=""){ return `<div class="ln ${cls}"><span>${l}</span><span>${v}</span></div>`; }
@@ -461,17 +470,17 @@ function assumBox(R){
 }
 
 function renderLeaver(R, label){
-  const {o,rows,last} = R, e=R.exitM, L=R.leaverNet;
-  const a1 = rows.slice(0,Math.min(12,e+1)).reduce((s,r)=>s+r.diff,0);
+  const {o,rows,last} = R, e=R.exitM, L=R.leaverNet, ae=R.aEnd, lastG = R.lastNew?last.newG:last.oldG, terms = R.lastNew?"new terms":"2024/25 terms";
+  const a1 = rows.slice(0,Math.min(12,ae+1)).reduce((s,r)=>s+r.diff,0);
   const a2 = R.arr2526 + R.arrJulDec26 - a1;
   const tot = R.arr2526 + R.arrJulDec26;
   let h = `<div class="kpis">
-    <div class="kpi hl"><div class="k">Total arrears owed (gross)</div><div class="v">${fmt(tot)}</div><div class="s">Jul 2025 – ${mLabel(e)} · ${e+1} months</div></div>
+    <div class="kpi hl"><div class="k">Total arrears owed (gross)</div><div class="v">${fmt(tot)}</div><div class="s">Jul 2025 – ${mLabel(ae)} · ${ae+1} months</div></div>
     <div class="kpi"><div class="k">Estimated take-home</div><div class="v">${fmt(L.net)}</div><div class="s">After tax, levies, pension and union fee</div></div>
-    <div class="kpi"><div class="k">Last salary (2024/25 terms)</div><div class="v">${fmt(last.oldG)}</div><div class="s">${mLabel(e)} · ${label(last)}</div></div>
+    <div class="kpi"><div class="k">Last salary (${terms})</div><div class="v">${fmt(lastG)}</div><div class="s">${mLabel(e)} · ${label(last)}</div></div>
   </div>`;
   const snaps = [
-    {t:`Last salary, ${mLabel(e)} (2024/25 terms)`, r:last, old:true},
+    {t:`Last salary, ${mLabel(e)} (${terms})`, r:last, old:!R.lastNew},
     {t:"From Jul 2025 (2025/26 rates)", r:rows[0]},
     {t:"From Jul 2026 (2026/27 rates)", r:rows[12]},
   ].filter(s=>s.r.m<=e);
@@ -481,10 +490,10 @@ function renderLeaver(R, label){
   ${snaps.map(s=>{ const b=s.old?s.r.oldB:s.r.newB, a=s.old?s.r.oldA:s.r.newA; return `<tr><td class="ttl">${s.t}</td><td data-l="Grade · notch">${label(s.r)}</td><td class="n" data-l="Basic">${fmt(b)}</td><td class="n" data-l="Allowances">${fmt(a)}</td><td class="n" data-l="Gross / month">${fmt(b+a)}</td></tr>`; }).join("")}
   </tbody></table></div></section>`;
   h += `<section class="card"><h2><span class="sec-num">2</span>Arrears owed to you</h2>
-  <p class="lead">New rates minus what you were paid, for each month up to ${mLabel(e)}.</p>
+  <p class="lead">New rates minus what you were paid, for each month up to ${mLabel(ae)}.${R.lastNew?` From ${mLabel(o.sm)} you were paid at the new rates, so arrears stop there.`:""}</p>
   <div class="box" style="max-width:460px">
-    ${line(`Jul 2025 – ${mLabel(Math.min(11,e))}`, fmt(a1))}
-    ${e>=12?line(`Jul 2026 – ${mLabel(e)}`, fmt(a2)):""}
+    ${line(`Jul 2025 – ${mLabel(Math.min(11,ae))}`, fmt(a1))}
+    ${ae>=12?line(`Jul 2026 – ${mLabel(ae)}`, fmt(a2)):""}
     ${line("<b>Total arrears</b>", "<b>"+fmt(tot)+"</b>")}
     ${line("PAYE", "−"+fmt(L.paye),"m")}
     ${line("SHIF + Housing Levy", "−"+fmt(L.shif+L.ahl),"m")}
