@@ -87,12 +87,13 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px}
 .legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px}
 .gbars{display:flex;flex-direction:column;gap:12px;margin-top:4px}
-.gb{display:grid;grid-template-columns:120px 1fr 120px;align-items:center;gap:12px}
+.gb{display:grid;grid-template-columns:120px 1fr 190px;align-items:center;gap:12px}
 .gb-l{display:flex;flex-direction:column;font-size:13.5px;line-height:1.3}
 .gb-l span{color:var(--muted);font-size:12.5px}
 .gb-t{height:22px;background:#eef1ef;border-radius:4px;overflow:hidden}
 .gb-f{height:100%;background:var(--green);border-radius:4px}
 .gb-v{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:14px}
+.gb-v small{display:block;white-space:nowrap;font-weight:400;font-size:12px;color:var(--muted)}
 .gb-tot{display:flex;justify-content:space-between;border-top:2px solid var(--ink);margin-top:14px;padding-top:8px;font-weight:700}
 @media (max-width:620px){.gb{grid-template-columns:1fr auto;row-gap:4px}.gb-t{grid-column:1 / -1;grid-row:2}.gb-l{flex-direction:row;gap:8px;align-items:baseline}}
 .juice{text-align:center;margin:26px auto 0;max-width:420px}
@@ -432,13 +433,13 @@ function render(R){
   // 5. cumulative, as bars
   const nFY = Math.floor(R.exitM/12)+1, gains = R.fyGain.slice(0,nFY);
   const gmax = Math.max(1, ...gains);
-  h += `<section class="card"><h2><span class="sec-num">5</span>Total gain over the agreement, Jul 2025 – ${R.exitM<47?mLabel(R.exitM):"Jun 2029"}</h2>
-  <p class="lead">Extra gross pay each year compared with staying on 2024/25 terms.</p>
+  h += `<section class="card"><h2><span class="sec-num">5</span>Cumulative gain from the new CBA, Jul 2025 – ${R.exitM<47?mLabel(R.exitM):"Jun 2029"}</h2>
+  <p class="lead">Extra pay you get only because of the new CBA, compared with staying on 2024/25 rates with the same increments and promotions. Gross, before tax.</p>
   <div class="gbars">${gains.map((v,i)=>`<div class="gb">
     <div class="gb-l"><b>${FY[i]}</b><span>${label(rows[i*12])}</span></div>
     <div class="gb-t"><div class="gb-f" style="width:${Math.max(0,100*v/gmax)}%"></div></div>
-    <div class="gb-v">${fmt(v)}</div></div>`).join("")}</div>
-  <div class="gb-tot"><span>Total${R.exitM<47?"":", 4 years"}</span><span>${fmt(R.total)}</span></div></section>`;
+    <div class="gb-v">${fmt(v)}<small>Cumulative ${fmt(gains.slice(0,i+1).reduce((a,b)=>a+b,0))}</small></div></div>`).join("")}</div>
+  <div class="gb-tot"><span>Cumulative gain${R.exitM<47?"":", 4 years"}</span><span>${fmt(R.total)}</span></div></section>`;
 
   // assumptions + detail
   h += assumBox(R);
