@@ -207,7 +207,14 @@ footer p{margin:0 0 10px}
       <li>Gratuity for contract staff (set pension to 0% if you have none).</li>
       <li>Effects on pension or retirement benefits for staff who have left.</li>
     </ul>
-    <p><b>Assumed:</b> house allowance doesn't change; increments continue each year in the month you choose; promotions start at the grade and notch you enter; arrears are taxed in the month they're paid. KRA lets you spread arrears tax back over earlier years, which can lower it. Universities already paying above these rates keep their rates.</p>
+    <p><b>Assumed:</b></p>
+    <ul>
+      <li>House allowance doesn't change.</li>
+      <li>Increments continue each year in the month you choose.</li>
+      <li>Promotions start at the grade and notch you enter.</li>
+      <li>Arrears are taxed in the month they're paid.</li>
+      <li>Universities paying above negotiated rates keep their rates.</li>
+    </ul>
     <p><b>Source:</b> Return to Work Formula, IPUCCF (FKE) and UASU, 30 Oct 2026. Schedules I and II. <b>Where your copy differs, your copy is right.</b></p>
   </div>
   <div class="juice" hidden>
@@ -405,13 +412,12 @@ function render(R){
   ${[["Gross pay",now.oldG,gB],["PAYE",-dNow.paye,-dB.paye],["SHIF",-dNow.shif,-dB.shif],["Housing Levy",-dNow.ahl,-dB.ahl]].concat(o.nssf?[["NSSF",-dNow.nssf,-dB.nssf]]:[]).concat(o.penr?[["Pension",-dNow.pen,-dB.pen]]:[]).concat([["Union dues (2%)",-dNow.union,-dB.union]]).map(([k,x,y])=>`<tr><td>${k}</td><td class="n">${fmtN(x)}</td><td class="n">${fmtN(y)}</td><td class="n">${fmtS(y-x)}</td></tr>`).join("")}
   <tr class="tot"><td>Est. take-home</td><td class="n">${fmtN(dNow.net)}</td><td class="n">${fmtN(dB.net)}</td><td class="n pos">${fmtS(dB.net-dNow.net)}</td></tr>
   </tbody></table></div>
-  <p class="note">About ${Math.round(100*(dB.net-dNow.net)/Math.max(1,gB-now.oldG))} cents of each extra shilling reaches you.${extra||""} SACCO and loans excluded.</p></section>`;
+  <p class="note">SACCO and loans excluded.${extra||""}</p></section>`;
 
   h += netTable(3, "Take-home pay: today vs January 2027", "Jan 2027", jan.newG, dJan);
 
   const M_JAN29 = 42, endM = Math.min(M_JAN29, R.exitM), end = rows[endM], dEnd = deductions(end.newG, end.newB, o), endL = endM===M_JAN29 ? "January 2029" : mLabel(endM);
-  h += netTable(4, `Take-home pay: today vs ${endL}`, endM===M_JAN29 ? "Jan 2029" : endL, end.newG, dEnd,
-    ` ${endM===M_JAN29 ? "January 2029 is midway through the final (2028/29) rates" : endL+" is your last month"} (${label(end)}, ${FY[end.fy]} rates). Uses today's tax rates and bands, which may change by then.`);
+  h += netTable(4, `Take-home pay: today vs ${endL}`, endM===M_JAN29 ? "Jan 2029" : endL, end.newG, dEnd, " Tax rates may change depending on the government elected.");
 
   // 5. cumulative, as bars
   const nFY = Math.floor(R.exitM/12)+1, gains = R.fyGain.slice(0,nFY);
