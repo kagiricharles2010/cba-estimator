@@ -82,7 +82,6 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .ln span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
 .ln.t{border-top:1px solid var(--ink);margin-top:4px;padding-top:6px;font-weight:700}
 .ln.m{color:var(--muted)}
-.hint.derived{color:var(--green);font-weight:600}
 .ln.sub{font-size:12.5px;padding:0 0 4px 12px}
 .bar{display:flex;height:24px;border-radius:4px;overflow:hidden;margin:10px 0 8px;background:#eef1ef}
 .bar div{height:100%}
@@ -133,14 +132,13 @@ footer p{margin:0 0 10px}
   <section class="card inputs" aria-label="Your details">
     <h2>Your details</h2>
     <h3 class="first">Starting point</h3>
-    <label for="g0">Grade on your July 2025 payslip</label>
+    <label for="g0">Grade on 1 Jul 2025</label>
     <select id="g0"></select>
-    <label for="n0">Basic pay on your July 2025 payslip</label>
+    <label for="n0">Notch on 1 Jul 2025</label>
     <select id="n0"></select>
-    <p class="hint">Pick the amount on your July 2025 payslip, after any July 2025 increment. Payslips are still on 2024/25 rates.</p>
+    <p class="hint">Amounts are 2024/25 basic pay. Match yours to your payslip.</p>
     <label for="im">Increment month</label>
     <select id="im"></select>
-    <p class="hint derived" id="derived"></p>
     <label for="ns">New salaries start</label>
     <select id="ns">
       <option value="16" selected>November 2026</option>
@@ -348,8 +346,6 @@ function compute(){
     const on = m<=exitM;
     rows.push({m, fy, g, n, on, oldB, newB, oldA, newA, oldG:oldB+oldA, newG:newB+newA, diff: on ? (newB+newA)-(oldB+oldA) : 0});
   }
-  { const r=rows[Math.min(M_NOW, exitM)], when = exitM<M_NOW ? `your last payslip (${mLabel(exitM)})` : "your Oct 2026 payslip";
-    $("derived").textContent = `Check: ${when} should show ${r.g} notch ${r.n} (KES ${r.oldB.toLocaleString("en-KE")}). If not, add any promotion below.`; }
   const sum = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+r.diff,0);
   const arr2526 = sum(0,12);
   const arrJulDec26 = sum(12,o.sm);
