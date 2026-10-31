@@ -398,19 +398,25 @@ function render(R){
     </div>
   </div></section>`;
 
-  // 4. net pay
-  h += `<section class="card"><h2><span class="sec-num">3</span>Take-home pay: today vs January 2027</h2>
+  // 3 + 4. net pay comparisons
+  const netTable = (num, title, col, gB, dB, extra) => `<section class="card"><h2><span class="sec-num">${num}</span>${title}</h2>
   <p class="lead">After PAYE, SHIF, Housing Levy${o.nssf?", NSSF":""}${o.penr?`, pension (${(o.penr*100).toFixed(1)}%)`:""} and union dues (2%).</p>
-  <div class="scroll"><table><thead><tr><th>KES / month</th><th class="n">Today</th><th class="n">Jan 2027</th><th class="n">Change</th></tr></thead><tbody>
-  ${[["Gross pay",now.oldG,jan.newG],["PAYE",-dNow.paye,-dJan.paye],["SHIF",-dNow.shif,-dJan.shif],["Housing Levy",-dNow.ahl,-dJan.ahl]].concat(o.nssf?[["NSSF",-dNow.nssf,-dJan.nssf]]:[]).concat(o.penr?[["Pension",-dNow.pen,-dJan.pen]]:[]).concat([["Union dues (2%)",-dNow.union,-dJan.union]]).map(([k,x,y])=>`<tr><td>${k}</td><td class="n">${fmtN(x)}</td><td class="n">${fmtN(y)}</td><td class="n">${fmtS(y-x)}</td></tr>`).join("")}
-  <tr class="tot"><td>Est. take-home</td><td class="n">${fmtN(dNow.net)}</td><td class="n">${fmtN(dJan.net)}</td><td class="n pos">${fmtS(dJan.net-dNow.net)}</td></tr>
+  <div class="scroll"><table><thead><tr><th>KES / month</th><th class="n">Today</th><th class="n">${col}</th><th class="n">Change</th></tr></thead><tbody>
+  ${[["Gross pay",now.oldG,gB],["PAYE",-dNow.paye,-dB.paye],["SHIF",-dNow.shif,-dB.shif],["Housing Levy",-dNow.ahl,-dB.ahl]].concat(o.nssf?[["NSSF",-dNow.nssf,-dB.nssf]]:[]).concat(o.penr?[["Pension",-dNow.pen,-dB.pen]]:[]).concat([["Union dues (2%)",-dNow.union,-dB.union]]).map(([k,x,y])=>`<tr><td>${k}</td><td class="n">${fmtN(x)}</td><td class="n">${fmtN(y)}</td><td class="n">${fmtS(y-x)}</td></tr>`).join("")}
+  <tr class="tot"><td>Est. take-home</td><td class="n">${fmtN(dNow.net)}</td><td class="n">${fmtN(dB.net)}</td><td class="n pos">${fmtS(dB.net-dNow.net)}</td></tr>
   </tbody></table></div>
-  <p class="note">About ${Math.round(100*(dJan.net-dNow.net)/Math.max(1,jan.newG-now.oldG))} cents of each extra shilling reaches you. SACCO and loans excluded.</p></section>`;
+  <p class="note">About ${Math.round(100*(dB.net-dNow.net)/Math.max(1,gB-now.oldG))} cents of each extra shilling reaches you.${extra||""} SACCO and loans excluded.</p></section>`;
 
-  // 4. cumulative, as bars
+  h += netTable(3, "Take-home pay: today vs January 2027", "Jan 2027", jan.newG, dJan);
+
+  const end = rows[R.exitM], dEnd = deductions(end.newG, end.newB, o), endL = mLabel(R.exitM);
+  h += netTable(4, `Take-home pay: today vs ${endL}`, endL, end.newG, dEnd,
+    ` ${endL} is ${R.exitM<47?"your last month":"the last month of the agreement"} (${label(end)}, ${FY[end.fy]} rates). Uses today's tax rates and bands, which may change by then.`);
+
+  // 5. cumulative, as bars
   const nFY = Math.floor(R.exitM/12)+1, gains = R.fyGain.slice(0,nFY);
   const gmax = Math.max(1, ...gains);
-  h += `<section class="card"><h2><span class="sec-num">4</span>Total gain over the agreement, Jul 2025 – ${R.exitM<47?mLabel(R.exitM):"Jun 2029"}</h2>
+  h += `<section class="card"><h2><span class="sec-num">5</span>Total gain over the agreement, Jul 2025 – ${R.exitM<47?mLabel(R.exitM):"Jun 2029"}</h2>
   <p class="lead">Extra gross pay each year compared with staying on 2024/25 terms.</p>
   <div class="gbars">${gains.map((v,i)=>`<div class="gb">
     <div class="gb-l"><b>${FY[i]}</b><span>${label(rows[i*12])}</span></div>
