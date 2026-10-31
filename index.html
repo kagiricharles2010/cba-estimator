@@ -377,10 +377,10 @@ function allowText(R, r, isNew){
   const o=R.o, parts=[];
   const c = isNew ? R.newC(r.m) : R.curC;
   if(c) parts.push(`Commuter ${fmtN(c)}`);
-  if(o.ha) parts.push(`House ${fmtN(o.ha)}`);
+  parts.push(o.ha ? `House ${fmtN(o.ha)}` : `House (not entered)`);
   const pr = isNew ? (PROF[r.g]||0) : (PROF[r.g] ? (o.cp===null ? PROF[r.g] : o.cp) : 0);
   if(pr) parts.push(`Professorial ${fmtN(pr)}`);
-  return parts.join(" + ") || "none";
+  return parts.join(" + ");
 }
 function subline(t){ return `<div class="ln m sub"><span>${t}</span></div>`; }
 function line(l,v,cls=""){ return `<div class="ln ${cls}"><span>${l}</span><span>${v}</span></div>`; }
@@ -402,7 +402,7 @@ function render(R){
 
   let h = "";
   h += `<div class="kpis">
-    <div class="kpi hl"><div class="k">${SL} basic pay · ${label(jan)}</div><div class="v">${fmt(jan.newB)}</div><div class="s">Plus allowances ${fmt(jan.newA)} = gross ${fmt(jan.newG)}</div></div>
+    <div class="kpi hl"><div class="k">${SL} basic pay · ${label(jan)}</div><div class="v">${fmt(jan.newB)}</div><div class="s">Plus ${allowText(R, jan, true).toLowerCase()} = gross ${fmt(jan.newG)}${o.ha?"":" (excluding house allowance)"}</div></div>
     <div class="kpi"><div class="k">Arrears Jul 2025 – Jun 2026 (gross)</div><div class="v">${fmt(R.arr2526)}</div><div class="s">3 instalments of ~${fmt(R.instal)}</div></div>
     <div class="kpi"><div class="k">Arrears ${A2} (gross)</div><div class="v">${fmt(R.arrJulDec26)}</div><div class="s">Paid with the January 2027 salary</div></div>
   </div>`;
