@@ -99,7 +99,7 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .juice-q{margin:0 0 8px;color:var(--muted);font-size:14px}
 .juice-btn{font:inherit;font-size:15px;font-weight:600;background:var(--green);color:#fff;border:0;border-radius:999px;padding:10px 20px;cursor:pointer}
 .juice-btn:hover{filter:brightness(1.1)}
-.juice-rev[hidden],.juice-btn[hidden]{display:none}
+.juice[hidden],.juice-rev[hidden],.juice-btn[hidden]{display:none}
 .juice-rev{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}
 .juice-num{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;background:var(--green-soft);color:var(--green);border-radius:999px;padding:9px 16px}
 .juice-copy{font:inherit;font-size:13.5px;font-weight:600;border:1px solid var(--green);background:#fff;color:var(--green);border-radius:999px;padding:7px 14px;cursor:pointer}
@@ -210,7 +210,7 @@ footer p{margin:0 0 10px}
     <p><b>Assumed:</b> house allowance doesn't change; increments continue each year in the month you choose; promotions start at the grade and notch you enter; arrears are taxed in the month they're paid. KRA lets you spread arrears tax back over earlier years, which can lower it. Universities already paying above these rates keep their rates.</p>
     <p><b>Source:</b> Return to Work Formula, IPUCCF (FKE) and UASU, 30 Oct 2026. Schedules I and II. <b>Where your copy differs, your copy is right.</b></p>
   </div>
-  <div class="juice">
+  <div class="juice" hidden>
     <p class="juice-q">Arrears looking good?</p>
     <button type="button" class="juice-btn" id="juiceBtn">🧃 Buy the don a juice</button>
     <div class="juice-rev" id="juiceRev" hidden>
@@ -483,6 +483,15 @@ document.querySelectorAll("select,input").forEach(el=>{ el.addEventListener("inp
   $("juiceBtn").addEventListener("click",()=>{ $("juiceNum").textContent="Pochi la Biashara · "+parts.join(" "); $("juiceBtn").hidden=true; $("juiceRev").hidden=false; });
   $("juiceCopy").addEventListener("click",async()=>{ try{ await navigator.clipboard.writeText(parts.join("")); $("juiceCopy").textContent="Copied ✓"; }catch(e){ $("juiceCopy").textContent="Copy failed: long-press the number"; } });
 })();
+
+// anonymous usage count: one "used" event per visit, on the first real input. No values are sent.
+let usedSent=false;
+function markUsed(e){
+  if(usedSent || !e.isTrusted) return;
+  const send=()=>{ if(window.goatcounter && window.goatcounter.count){ window.goatcounter.count({path:"used", title:"Used the calculator", event:true}); usedSent=true; return true; } return false; };
+  if(!send()){ usedSent=true; let n=0; const t=setInterval(()=>{ if(send()||++n>20) clearInterval(t); },500); }
+}
+document.querySelectorAll("#g0,#n0,#im,select,input").forEach(el=>{ el.addEventListener("input",markUsed); el.addEventListener("change",markUsed); });
 syncPromo(); compute();
 </script>
 <script data-goatcounter="https://kagiricharles.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
