@@ -409,9 +409,9 @@ function render(R){
 
   h += netTable(3, "Take-home pay: today vs January 2027", "Jan 2027", jan.newG, dJan);
 
-  const end = rows[R.exitM], dEnd = deductions(end.newG, end.newB, o), endL = mLabel(R.exitM);
-  h += netTable(4, `Take-home pay: today vs ${endL}`, endL, end.newG, dEnd,
-    ` ${endL} is ${R.exitM<47?"your last month":"the last month of the agreement"} (${label(end)}, ${FY[end.fy]} rates). Uses today's tax rates and bands, which may change by then.`);
+  const endM = Math.min(36, R.exitM), end = rows[endM], dEnd = deductions(end.newG, end.newB, o), endL = endM===36 ? "July 2028" : mLabel(endM);
+  h += netTable(4, `Take-home pay: today vs ${endL}`, endL==="July 2028" ? "Jul 2028" : endL, end.newG, dEnd,
+    ` ${endM===36 ? "July 2028 is when the final (2028/29) rates start" : endL+" is your last month"} (${label(end)}, ${FY[end.fy]} rates). Uses today's tax rates and bands, which may change by then.`);
 
   // 5. cumulative, as bars
   const nFY = Math.floor(R.exitM/12)+1, gains = R.fyGain.slice(0,nFY);
