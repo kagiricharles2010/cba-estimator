@@ -51,6 +51,17 @@
         th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); }
         th { background: var(--accent); color: var(--primary); font-weight: 600; }
         tr.highlight-row { background-color: #f1f8f5; font-weight: bold; }
+
+        /* Section 5 Visual Bars Styling */
+        .sec5-item { display: grid; grid-template-columns: 1.2fr 2fr 1.2fr; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.85rem; border-bottom: 1px solid #f1f3f5; padding-bottom: 8px; }
+        .sec5-label { font-weight: 600; color: var(--text); }
+        .sec5-sub { font-size: 0.75rem; color: var(--text-muted); }
+        .sec5-bar-bg { background: #f1f3f5; border-radius: 4px; height: 16px; width: 100%; overflow: hidden; position: relative; }
+        .sec5-bar-fill { background: var(--primary); height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+        .sec5-amounts { text-align: right; }
+        .sec5-val { font-weight: bold; color: var(--primary); }
+        .sec5-cum { font-size: 0.75rem; color: var(--text-muted); }
+        .sec5-total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 8px; border-top: 2px solid var(--text); font-weight: bold; font-size: 0.95rem; }
         
         .disclaimer { font-size: 0.75rem; color: var(--text-muted); margin-top: 20px; border-top: 1px solid var(--border); padding-top: 10px; }
     </style>
@@ -59,7 +70,7 @@
 
 <div class="container">
     <div class="demo-banner">
-        <strong>Demo</strong> · Unofficial estimate for KUSU staff based on the Return to Work Formula of 30 October 2026.
+        <strong>Demo</strong> · Unofficial estimate for KUSU staff based on the Return to Work Formula of 30 October 2026[cite: 3].
     </div>
 
     <h1>2025–2029 CBA Pay Estimator (KUSU)</h1>
@@ -236,6 +247,13 @@
                 <h2>4. Take-Home Pay (Current vs New)</h2>
                 <div id="takeHomeComparisonContainer"></div>
             </div>
+
+            <!-- SECTION 5: CUMULATIVE GAIN -->
+            <div class="panel">
+                <h2>5. Cumulative gain from the new CBA, Jul 2025 – Jun 2029</h2>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Extra pay you get only because of the new CBA, compared with staying on 2024/25 rates with the same increments and promotions. Gross, before tax.</p>
+                <div id="section5Container"></div>
+            </div>
         </div>
     </div>
 
@@ -327,21 +345,14 @@
         return parseInt(document.getElementById("gradeSelect").value);
     }
 
-    // Helper to simulate salary progression using diagonal increments based on increment month
     function getSalaryTimeline(startGrade, startNotch, incMonth) {
-        let timeline = {}; // year-month string keys or structural lookup
-        // For simplicity and alignment with UASU diagonal logic:
-        // July 2025 to June 2029 progression simulator
         let currentGrade = startGrade;
         let currentNotch = startNotch;
-        
-        // We track month-by-month basic salaries from July 2025 onwards
         let salaries = [];
         let curY = 2025;
-        let curM = 7; // July 2025 start
+        let curM = 7;
 
-        for (let i = 0; i < 48; i++) { // 4 years (July 2025 - June 2029)
-            // Check promotions
+        for (let i = 0; i < 48; i++) {
             let ymStr = `${curY}-${String(curM).padStart(2, '0')}`;
             
             if (document.getElementById("promo1Toggle").checked) {
@@ -359,24 +370,21 @@
                 }
             }
 
-            // Check annual increment (moves down notch)
             if (i > 0 && curM === incMonth) {
                 if (currentNotch < 11) currentNotch++;
             }
 
-            // Determine fiscal year column index for KUSU salary table
-            // 2024/25 base = col 0
-            // 2025/26 rates = col 1 (active from July 2025)
-            // 2026/27 rates = col 2 (active from July 2026)
-            // 2027/28 rates = col 3 (active from July 2027)
-            // 2028/29 rates = col 4 (active from July 2028)
             let colIdx = 1;
             if (curY === 2026 && curM >= 7 || curY > 2026) colIdx = 2;
             if (curY === 2027 && curM >= 7 || curY > 2027) colIdx = 3;
             if (curY === 2028 && curM >= 7 || curY > 2028) colIdx = 4;
 
             let basicPay = kusuSalaries[currentGrade][currentNotch][colIdx];
-            salaries.push({year: curY, month: curM, basic: basicPay, grade: currentGrade, notch: currentNotch});
+            
+            // Baseline (staying on 2024/25 rates with same increments/promotions)
+            let baselineBasic = kusuSalaries[startGrade][startNotch][0];
+
+            salaries.push({year: curY, month: curM, basic: basicPay, baseline: baselineBasic, grade: currentGrade, notch: currentNotch});
 
             curM++;
             if (curM > 12) {
@@ -407,7 +415,6 @@
 
         const timeline = getSalaryTimeline(startGrade, startNotchIdx, incMonth);
 
-        // Find active basic pay for implementation start month
         let targetTimelineItem = timeline.find(t => t.year === startYear && t.month === (startMonthIdx + 1));
         let activeBasic = targetTimelineItem ? targetTimelineItem.basic : kusuSalaries[activeGrade][startNotchIdx][2];
         let activeGross = activeBasic + house + commuter;
@@ -417,28 +424,71 @@
         document.getElementById("hlCard1Basic").innerText = formatCurrency(activeBasic);
         document.getElementById("hlCard1Footer").innerText = `Plus commuter ${commuter.toLocaleString()} + house ${house.toLocaleString()} = gross ${formatCurrency(activeGross)}`;
 
-        // 2. Headline Card 2 (2025/26 Arrears: July 2025 - June 2026)
+        // 2. Headline Card 2 (2025/26 Arrears)
         let totalArr2526 = 0;
         for (let i = 0; i < 12; i++) {
-            let newBasic = timeline[i].basic;
-            let oldBasic = kusuSalaries[startGrade][startNotchIdx][0]; // approximate old terms baseline
-            totalArr2526 += (newBasic - oldBasic);
+            totalArr2526 += (timeline[i].basic - timeline[i].baseline);
         }
         let instalment = totalArr2526 / 3;
         document.getElementById("hlCard2Gross").innerText = formatCurrency(totalArr2526);
         document.getElementById("hlCard2Instalments").innerText = `3 instalments of ${formatCurrency(instalment)}`;
 
-        // 3. Headline Card 3 (Dynamic Preceding Arrears: July 2026 to month preceding implementation)
+        // 3. Headline Card 3 (Dynamic Preceding Arrears)
         let months2026Count = (startYear === 2026) ? (startMonthIdx - 6) : 6;
         let totalArr2627 = 0;
         for (let i = 12; i < 12 + months2026Count; i++) {
-            let newBasic = timeline[i].basic;
-            let oldBasic = kusuSalaries[startGrade][startNotchIdx][0];
-            totalArr2627 += (newBasic - oldBasic);
+            totalArr2627 += (timeline[i].basic - timeline[i].baseline);
         }
         let precedingMonthName = monthNames[(startMonthIdx - 1 + 12) % 12];
         document.getElementById("hlCard3Title").innerText = `Arrears Jul – ${precedingMonthName.substring(0, 3)} 2026 (gross)`;
         document.getElementById("hlCard3Gross").innerText = formatCurrency(totalArr2627);
+
+        // Section 5: Cumulative Gain Calculation & Rendering (4 Financial Years)
+        let fyGains = [0, 0, 0, 0];
+        let fyNotches = [timeline[11], timeline[23], timeline[35], timeline[47]]; // End of each FY (June)
+
+        for (let i = 0; i < 48; i++) {
+            let fyIdx = Math.floor(i / 12);
+            fyGains[fyIdx] += (timeline[i].basic - timeline[i].baseline);
+        }
+
+        let maxGain = Math.max(...fyGains, 1);
+        let cumulativeSum = 0;
+        let fyLabels = ["2025/26", "2026/27", "2027/28", "2028/29"];
+        let sec5Html = "";
+
+        for (let f = 0; f < 4; f++) {
+            cumulativeSum += fyGains[f];
+            let pct = Math.min(100, Math.max(5, (fyGains[f] / maxGain) * 100));
+            let fGrade = fyNotches[f].grade;
+            let fNotch = fyNotches[f].notch + 1;
+
+            sec5Html += `
+                <div class="sec5-item">
+                    <div>
+                        <div class="sec5-label">${fyLabels[f]}</div>
+                        <div class="sec5-sub">Grade ${fGrade} · notch ${fNotch}</div>
+                    </div>
+                    <div>
+                        <div class="sec5-bar-bg">
+                            <div class="sec5-bar-fill" style="width: ${pct}%;"></div>
+                        </div>
+                    </div>
+                    <div class="sec5-amounts">
+                        <div class="sec5-val">${formatCurrency(fyGains[f])}</div>
+                        <div class="sec5-cum">Cumulative ${formatCurrency(cumulativeSum)}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        sec5Html += `
+            <div class="sec5-total-row">
+                <div>Cumulative gain, 4 years</div>
+                <div>${formatCurrency(cumulativeSum)}</div>
+            </div>
+        `;
+        document.getElementById("section5Container").innerHTML = sec5Html;
 
         // Salary Table HTML
         const base2024 = kusuSalaries[startGrade][startNotchIdx][0];
