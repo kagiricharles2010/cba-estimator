@@ -121,7 +121,7 @@
                         <option value="5">May</option>
                         <option value="6">June</option>
                     </select>
-                    <div class="help-text">Month when your 5% annual increment is applied.</div>
+                    <div class="help-text">Month when your annual increment is normally applied.</div>
                 </div>
 
                 <div class="form-group">
@@ -191,13 +191,13 @@
                 <div class="form-group">
                     <label>House Allowance (Auto-selected based on active/promoted Grade)</label>
                     <input type="text" id="houseDisplay" readonly style="background:#e9ecef; font-weight:bold;">
-                    <div class="help-text">Automatically updates to match the grade of your latest promotion[cite: 1].</div>
+                    <div class="help-text">Automatically updates to match the grade of your latest promotion.</div>
                 </div>
 
                 <div class="form-group">
                     <label for="commuterInput">Commuter Allowance (KES/month)</label>
                     <input type="number" id="commuterInput" value="12000" oninput="calculate();">
-                    <div class="help-text">Default KES 12,000 (Harmonized RTWF rate is up to KES 18,000)[cite: 10].</div>
+                    <div class="help-text">Default KES 12,000 (Harmonized RTWF rate is up to KES 18,000).</div>
                 </div>
 
                 <div class="form-group">
@@ -258,7 +258,7 @@
     </div>
 
     <div class="disclaimer">
-        <strong>Scope and disclaimer:</strong> Unofficial demo based on KUSU Return to Work Formula schedules signed on 30 October 2026[cite: 3]. Union dues are fixed at 2%[cite: 6].
+        <strong>Scope and disclaimer:</strong> Unofficial demo based on KUSU Return to Work Formula schedules signed on 30 October 2026. Union dues are fixed at 2%.
     </div>
 </div>
 
@@ -312,12 +312,10 @@
 
     function onBaseGradeChange() {
         updateNotches();
-        // Reset/update promo dropdown defaults based on new base grade
         if (document.getElementById("promo1Toggle").checked) setSmartPromoDefaults(1);
         if (document.getElementById("promo2Toggle").checked) setSmartPromoDefaults(2);
     }
 
-    // Automatically determine intelligent defaults for promotion grade & notch
     function setSmartPromoDefaults(num) {
         let referenceGrade, referenceNotchIdx;
 
@@ -325,7 +323,6 @@
             referenceGrade = parseInt(document.getElementById("gradeSelect").value);
             referenceNotchIdx = parseInt(document.getElementById("notchSelect").value || 0);
         } else {
-            // For second promotion, reference first promotion if active, otherwise base
             if (document.getElementById("promo1Toggle").checked) {
                 referenceGrade = parseInt(document.getElementById("promo1Grade").value);
                 referenceNotchIdx = parseInt(document.getElementById("promo1Notch").value || 0);
@@ -339,10 +336,8 @@
         const gradeSelectElem = document.getElementById(`promo${num}Grade`);
         gradeSelectElem.value = targetGrade;
 
-        // Get current basic salary to beat
         const currentBasic = kusuSalaries[referenceGrade][referenceNotchIdx][0];
 
-        // Populate notches and select the lowest notch with a higher basic salary
         const notchSelect = document.getElementById(`promo${num}Notch`);
         notchSelect.innerHTML = "";
         const newSalaries = kusuSalaries[targetGrade];
@@ -600,7 +595,6 @@
 
     window.onload = function() {
         updateNotches();
-        // Set default intelligent promo values on load if toggled
         if (document.getElementById("promo1Toggle").checked) setSmartPromoDefaults(1);
         if (document.getElementById("promo2Toggle").checked) setSmartPromoDefaults(2);
         calculate();
