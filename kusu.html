@@ -76,12 +76,12 @@
                     <select id="gradeSelect" onchange="updateNotches(); calculate();">
                         <option value="15">Grade 15</option>
                         <option value="14">Grade 14</option>
-                        <option value="13" selected>Grade 13</option>
+                        <option value="13">Grade 13</option>
                         <option value="12">Grade 12</option>
                         <option value="11">Grade 11</option>
                         <option value="10">Grade 10</option>
                         <option value="9">Grade 9</option>
-                        <option value="8">Grade 8</option>
+                        <option value="8" selected>Grade 8</option>
                         <option value="7">Grade 7</option>
                         <option value="6">Grade 6</option>
                         <option value="5">Grade 5</option>
@@ -121,7 +121,7 @@
                         <div class="form-group">
                             <label>New Grade</label>
                             <select id="promo1Grade" onchange="updatePromoNotches(1); calculate();">
-                                <option value="15">Grade 15</option><option value="14">Grade 14</option><option value="13">Grade 13</option><option value="12" selected>Grade 12</option><option value="11">Grade 11</option><option value="10">Grade 10</option><option value="9">Grade 9</option><option value="8">Grade 8</option><option value="7">Grade 7</option><option value="6">Grade 6</option><option value="5">Grade 5</option>
+                                <option value="15">Grade 15</option><option value="14">Grade 14</option><option value="13">Grade 13</option><option value="12">Grade 12</option><option value="11">Grade 11</option><option value="10">Grade 10</option><option value="9">Grade 9</option><option value="8" selected>Grade 8</option><option value="7">Grade 7</option><option value="6">Grade 6</option><option value="5">Grade 5</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -144,7 +144,7 @@
                         <div class="form-group">
                             <label>New Grade</label>
                             <select id="promo2Grade" onchange="updatePromoNotches(2); calculate();">
-                                <option value="15">Grade 15</option><option value="14" selected>Grade 14</option><option value="13">Grade 13</option><option value="12">Grade 12</option><option value="11">Grade 11</option><option value="10">Grade 10</option><option value="9">Grade 9</option><option value="8">Grade 8</option><option value="7">Grade 7</option><option value="6">Grade 6</option><option value="5">Grade 5</option>
+                                <option value="15">Grade 15</option><option value="14">Grade 14</option><option value="13">Grade 13</option><option value="12">Grade 12</option><option value="11">Grade 11</option><option value="10">Grade 10</option><option value="9" selected>Grade 9</option><option value="8">Grade 8</option><option value="7">Grade 7</option><option value="6">Grade 6</option><option value="5">Grade 5</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -259,7 +259,7 @@
         for (let i = 0; i < salaries2024.length; i++) {
             const opt = document.createElement("option");
             opt.value = i;
-            if (i === 8 && grade === "13") opt.selected = true;
+            if (i === 8 && grade === "8") opt.selected = true;
             opt.text = `Notch ${i + 1} (${formatCurrency(salaries2024[i][0])})`;
             notchSelect.add(opt);
         }
