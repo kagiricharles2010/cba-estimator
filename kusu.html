@@ -95,6 +95,25 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="incrementMonth">Increment Month</label>
+                    <select id="incrementMonth" onchange="calculate();">
+                        <option value="7" selected>July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                    </select>
+                    <div class="help-text">Month when your 5% annual increment is applied.</div>
+                </div>
+
+                <div class="form-group">
                     <label for="startMonth">New Salaries Implementation Start</label>
                     <select id="startMonth" onchange="calculate();">
                         <option value="2026-11">November 2026</option>
@@ -161,7 +180,7 @@
                 <div class="form-group">
                     <label>House Allowance (Auto-selected based on active/promoted Grade)</label>
                     <input type="text" id="houseDisplay" readonly style="background:#e9ecef; font-weight:bold;">
-                    <div class="help-text">Automatically updates to match the grade of your latest promotion[cite: 1].</div>
+                    <div class="help-text">Automatically updates to match the grade of your latest promotion.</div>
                 </div>
 
                 <div class="form-group">
@@ -221,7 +240,7 @@
     </div>
 
     <div class="disclaimer">
-        <strong>Scope and disclaimer:</strong> Unofficial demo based on KUSU Return to Work Formula schedules signed on 30 October 2026. Union dues are fixed at 2%[cite: 6].
+        <strong>Scope and disclaimer:</strong> Unofficial demo based on KUSU Return to Work Formula schedules signed on 30 October 2026[cite: 3]. Union dues are fixed at 2%[cite: 6].
     </div>
 </div>
 
@@ -308,9 +327,70 @@
         return parseInt(document.getElementById("gradeSelect").value);
     }
 
+    // Helper to simulate salary progression using diagonal increments based on increment month
+    function getSalaryTimeline(startGrade, startNotch, incMonth) {
+        let timeline = {}; // year-month string keys or structural lookup
+        // For simplicity and alignment with UASU diagonal logic:
+        // July 2025 to June 2029 progression simulator
+        let currentGrade = startGrade;
+        let currentNotch = startNotch;
+        
+        // We track month-by-month basic salaries from July 2025 onwards
+        let salaries = [];
+        let curY = 2025;
+        let curM = 7; // July 2025 start
+
+        for (let i = 0; i < 48; i++) { // 4 years (July 2025 - June 2029)
+            // Check promotions
+            let ymStr = `${curY}-${String(curM).padStart(2, '0')}`;
+            
+            if (document.getElementById("promo1Toggle").checked) {
+                let p1m = document.getElementById("promo1Month").value;
+                if (ymStr === p1m) {
+                    currentGrade = parseInt(document.getElementById("promo1Grade").value);
+                    currentNotch = parseInt(document.getElementById("promo1Notch").value);
+                }
+            }
+            if (document.getElementById("promo2Toggle").checked) {
+                let p2m = document.getElementById("promo2Month").value;
+                if (ymStr === p2m) {
+                    currentGrade = parseInt(document.getElementById("promo2Grade").value);
+                    currentNotch = parseInt(document.getElementById("promo2Notch").value);
+                }
+            }
+
+            // Check annual increment (moves down notch)
+            if (i > 0 && curM === incMonth) {
+                if (currentNotch < 11) currentNotch++;
+            }
+
+            // Determine fiscal year column index for KUSU salary table
+            // 2024/25 base = col 0
+            // 2025/26 rates = col 1 (active from July 2025)
+            // 2026/27 rates = col 2 (active from July 2026)
+            // 2027/28 rates = col 3 (active from July 2027)
+            // 2028/29 rates = col 4 (active from July 2028)
+            let colIdx = 1;
+            if (curY === 2026 && curM >= 7 || curY > 2026) colIdx = 2;
+            if (curY === 2027 && curM >= 7 || curY > 2027) colIdx = 3;
+            if (curY === 2028 && curM >= 7 || curY > 2028) colIdx = 4;
+
+            let basicPay = kusuSalaries[currentGrade][currentNotch][colIdx];
+            salaries.push({year: curY, month: curM, basic: basicPay, grade: currentGrade, notch: currentNotch});
+
+            curM++;
+            if (curM > 12) {
+                curM = 1;
+                curY++;
+            }
+        }
+        return salaries;
+    }
+
     function calculate() {
         const startGrade = parseInt(document.getElementById("gradeSelect").value);
         const startNotchIdx = parseInt(document.getElementById("notchSelect").value || 0);
+        const incMonth = parseInt(document.getElementById("incrementMonth").value);
         
         const activeGrade = getActiveGrade();
         const house = houseAllowances[activeGrade];
@@ -325,41 +405,50 @@
         const startYear = parseInt(parts[0]);
         const startMonthIdx = parseInt(parts[1]) - 1;
 
-        const base2024 = kusuSalaries[startGrade][startNotchIdx][0];
-        const base2025 = kusuSalaries[startGrade][startNotchIdx][1];
-        const base2026 = kusuSalaries[activeGrade][startNotchIdx][2];
+        const timeline = getSalaryTimeline(startGrade, startNotchIdx, incMonth);
+
+        // Find active basic pay for implementation start month
+        let targetTimelineItem = timeline.find(t => t.year === startYear && t.month === (startMonthIdx + 1));
+        let activeBasic = targetTimelineItem ? targetTimelineItem.basic : kusuSalaries[activeGrade][startNotchIdx][2];
+        let activeGross = activeBasic + house + commuter;
 
         // 1. Headline Card 1 (Green)
-        let activeBasic = startYear === 2026 ? base2026 : kusuSalaries[activeGrade][startNotchIdx][3];
-        let activeGross = activeBasic + house + commuter;
-        document.getElementById("hlCard1Title").innerText = `${monthNames[startMonthIdx]} ${startYear} basic pay · Grade ${activeGrade} · notch ${startNotchIdx + 1}`;
+        document.getElementById("hlCard1Title").innerText = `${monthNames[startMonthIdx]} ${startYear} basic pay · Grade ${activeGrade} · notch ${targetTimelineItem ? targetTimelineItem.notch + 1 : startNotchIdx + 1}`;
         document.getElementById("hlCard1Basic").innerText = formatCurrency(activeBasic);
         document.getElementById("hlCard1Footer").innerText = `Plus commuter ${commuter.toLocaleString()} + house ${house.toLocaleString()} = gross ${formatCurrency(activeGross)}`;
 
-        // 2. Headline Card 2 (2025/26 Arrears)
-        let diff202526 = base2025 - base2024;
-        let totalArr2526 = diff202526 * 12;
+        // 2. Headline Card 2 (2025/26 Arrears: July 2025 - June 2026)
+        let totalArr2526 = 0;
+        for (let i = 0; i < 12; i++) {
+            let newBasic = timeline[i].basic;
+            let oldBasic = kusuSalaries[startGrade][startNotchIdx][0]; // approximate old terms baseline
+            totalArr2526 += (newBasic - oldBasic);
+        }
         let instalment = totalArr2526 / 3;
         document.getElementById("hlCard2Gross").innerText = formatCurrency(totalArr2526);
         document.getElementById("hlCard2Instalments").innerText = `3 instalments of ${formatCurrency(instalment)}`;
 
-        // 3. Headline Card 3 (Preceding Month Dynamic Arrears)
-        let months2026Count = (startYear === 2026) ? (startMonthIdx - 6) : 6; 
+        // 3. Headline Card 3 (Dynamic Preceding Arrears: July 2026 to month preceding implementation)
+        let months2026Count = (startYear === 2026) ? (startMonthIdx - 6) : 6;
+        let totalArr2627 = 0;
+        for (let i = 12; i < 12 + months2026Count; i++) {
+            let newBasic = timeline[i].basic;
+            let oldBasic = kusuSalaries[startGrade][startNotchIdx][0];
+            totalArr2627 += (newBasic - oldBasic);
+        }
         let precedingMonthName = monthNames[(startMonthIdx - 1 + 12) % 12];
-        let diff202627 = base2026 - base2024;
-        let totalArr2627 = diff202627 * months2026Count;
-
         document.getElementById("hlCard3Title").innerText = `Arrears Jul – ${precedingMonthName.substring(0, 3)} 2026 (gross)`;
         document.getElementById("hlCard3Gross").innerText = formatCurrency(totalArr2627);
 
         // Salary Table HTML
+        const base2024 = kusuSalaries[startGrade][startNotchIdx][0];
         let html = `<table>
             <tr><th>Period / Rate</th><th>Basic</th><th>Allowances</th><th>Gross</th></tr>
             <tr><td>Old Terms (2024/25)</td><td>${formatCurrency(base2024)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(base2024 + house + commuter)}</td></tr>
-            <tr><td>From Jul 2025</td><td>${formatCurrency(base2025)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(base2025 + house + commuter)}</td></tr>
-            <tr><td>From Jul 2026</td><td>${formatCurrency(base2026)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(base2026 + house + commuter)}</td></tr>
-            <tr><td>From Jul 2027</td><td>${formatCurrency(kusuSalaries[activeGrade][startNotchIdx][3])}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(kusuSalaries[activeGrade][startNotchIdx][3] + house + commuter)}</td></tr>
-            <tr><td>From Jul 2028</td><td>${formatCurrency(kusuSalaries[activeGrade][startNotchIdx][4])}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(kusuSalaries[activeGrade][startNotchIdx][4] + house + commuter)}</td></tr>
+            <tr><td>From Jul 2025</td><td>${formatCurrency(timeline[0].basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(timeline[0].basic + house + commuter)}</td></tr>
+            <tr><td>From Jul 2026</td><td>${formatCurrency(timeline[12].basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(timeline[12].basic + house + commuter)}</td></tr>
+            <tr><td>From Jul 2027</td><td>${formatCurrency(timeline[24] ? timeline[24].basic : timeline[12].basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency((timeline[24] ? timeline[24].basic : timeline[12].basic) + house + commuter)}</td></tr>
+            <tr><td>From Jul 2028</td><td>${formatCurrency(timeline[36] ? timeline[36].basic : timeline[12].basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency((timeline[36] ? timeline[36].basic : timeline[12].basic) + house + commuter)}</td></tr>
         </table>`;
         document.getElementById("salaryTableContainer").innerHTML = html;
 
