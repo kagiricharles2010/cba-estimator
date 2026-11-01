@@ -23,7 +23,29 @@
         p.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }
         
         .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+        
+        /* Section Eyebrow Labels */
+        .column-header {
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary);
+            background: #e9f5ed;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border-left: 4px solid var(--primary);
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 900px) { 
+            .layout { grid-template-columns: 1fr; }
+            .column-header.projections-header {
+                margin-top: 25px;
+                padding-top: 10px;
+                border-top: 2px dashed var(--border);
+            }
+        }
         
         .panel { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-bottom: 15px; }
         .panel h2 { font-size: 1.1rem; color: var(--primary-light); margin-bottom: 12px; border-bottom: 2px solid var(--accent); padding-bottom: 4px; }
@@ -79,6 +101,8 @@
     <div class="layout">
         <!-- LEFT COLUMN: INPUTS -->
         <div>
+            <div class="column-header">Your Details</div>
+
             <div class="panel">
                 <h2>1. Starting Point (July 2025)</h2>
                 
@@ -214,6 +238,8 @@
 
         <!-- RIGHT COLUMN: HEADLINE CARDS & TABLES -->
         <div>
+            <div class="column-header projections-header">Your Projections</div>
+
             <!-- Headline Summary Cards Row -->
             <div class="headline-grid">
                 <!-- Card 1: Green Headline -->
