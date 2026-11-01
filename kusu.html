@@ -453,6 +453,15 @@
     }
 
     function calculate() {
+        // Track GoatCounter engagement event
+        if (window.goatcounter && window.goatcounter.count) {
+            window.goatcounter.count({
+                path: 'kusu-calculator-used',
+                title: 'KUSU Calculator Used',
+                event: true
+            });
+        }
+
         const startGrade = parseInt(document.getElementById("gradeSelect").value);
         const startNotchIdx = parseInt(document.getElementById("notchSelect").value || 0);
         const incMonth = parseInt(document.getElementById("incrementMonth").value);
@@ -600,6 +609,9 @@
         calculate();
     };
 </script>
+
+<!-- GoatCounter Analytics -->
+<script data-goatcounter="https://cba.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 
 </body>
 </html>
