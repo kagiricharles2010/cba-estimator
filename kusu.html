@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025–2029 CBA Pay Estimator for KUSU (Demo)</title>
+    <style>
+        :root {
+            --primary: #1b4332;
+            --primary-light: #2d6a4f;
+            --accent: #d8f3dc;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #212529;
+            --text-muted: #6c757d;
+            --border: #dee2e6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); line-height: 1.5; padding: 10px; }
+        .container { max-width: 1200px; margin: 0 auto; background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .demo-banner { background: #fff3cd; color: #856404; padding: 8px 12px; font-size: 0.85rem; border-radius: 4px; margin-bottom: 15px; border: 1px solid #ffeeba; }
+        h1 { font-size: 1.6rem; color: var(--primary); margin-bottom: 5px; }
+        p.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }
+        
+        .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+        
+        .panel { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-bottom: 15px; }
+        .panel h2 { font-size: 1.1rem; color: var(--primary-light); margin-bottom: 12px; border-bottom: 2px solid var(--accent); padding-bottom: 4px; }
+        
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; }
+        select, input[type="number"], input[type="text"] { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; }
+        .help-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        
+        .checkbox-group { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 0.85rem; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--accent); color: var(--primary); font-weight: 600; }
+        
+        .result-card { background: #f1f8f5; border-left: 4px solid var(--primary); padding: 12px; margin-bottom: 10px; border-radius: 4px; }
+        .result-card h3 { font-size: 0.95rem; color: var(--primary); margin-bottom: 6px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85rem; }
+        .stat-item { background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; }
+        .stat-label { color: var(--text-muted); font-size: 0.75srem; }
+        .stat-val { font-weight: bold; color: var(--primary); }
+        
+        .disclaimer { font-size: 0.75rem; color: var(--text-muted); margin-top: 20px; border-top: 1px solid var(--border); padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="demo-banner">
+        <strong>Demo</strong> · Unofficial estimate for KUSU staff based on the Return to Work Formula of 30 October 2026.
+    </div>
+
+    <h1>2025–2029 CBA Pay Estimator (KUSU)</h1>
+    <p class="subtitle">Estimate new salaries, allowances, and arrears for Kenya Universities Staff Union members.</p>
+
+    <div class="layout">
+        <!-- LEFT COLUMN: INPUTS -->
+        <div>
+            <div class="panel">
+                <h2>1. Starting Point (July 2025)</h2>
+                
+                <div class="form-group">
+                    <label for="gradeSelect">Grade on July 2025 Payslip</label>
+                    <select id="gradeSelect" onchange="updateNotches(); calculate();">
+                        <option value="15">Grade 15</option>
+                        <option value="14">Grade 14</option>
+                        <option value="13">Grade 13</option>
+                        <option value="12">Grade 12</option>
+                        <option value="11">Grade 11</option>
+                        <option value="10">Grade 10</option>
+                        <option value="9">Grade 9</option>
+                        <option value="8">Grade 8</option>
+                        <option value="7">Grade 7</option>
+                        <option value="6">Grade 6</option>
+                        <option value="5">Grade 5</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="notchSelect">Notch on July 2025 Payslip</label>
+                    <select id="notchSelect" onchange="calculate();">
+                        <!-- Populated dynamically -->
+                    </select>
+                    <div class="help-text">Shows 2024/25 basic pay scale notches with basic salaries in brackets.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="incrementMonth">Annual Increment Month</label>
+                    <select id="incrementMonth" onchange="calculate();">
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="startMonth">New Salaries Implementation Start</label>
+                    <select id="startMonth" onchange="calculate();">
+                        <option value="2026-11">November 2026</option>
+                        <option value="2026-12">December 2026</option>
+                        <option value="2027-01" selected>January 2027</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>2. Allowances & Deductions</h2>
+                
+                <div class="form-group">
+                    <label>House Allowance (Auto-selected from Grade)</label>
+                    <input type="text" id="houseDisplay" readonly style="background:#e9ecef; font-weight:bold;">
+                    <div class="help-text">Mapped from KUSU schedule (e.g. Gr. 15: KES 73,715 to Gr. 5: KES 17,692)[cite: 1].</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="commuterInput">Commuter Allowance (KES/month)</label>
+                    <input type="number" id="commuterInput" value="18000" oninput="calculate();">
+                    <div class="help-text">RTWF harmonized rate is KES 18,000[cite: 10].</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="pensionInput">Pension (% of basic)</label>
+                    <input type="number" id="pensionInput" value="7.5" step="0.5" oninput="calculate();">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="deductNssf" checked onchange="calculate();">
+                    <label for="deductNssf" style="display:inline; font-weight:normal;">Deduct NSSF Tiered Contributions</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: RESULTS -->
+        <div>
+            <div class="panel">
+                <h2>3. Salary Comparison & Projections</h2>
+                <div id="salaryTableContainer"></div>
+            </div>
+
+            <div class="panel">
+                <h2>4. Arrears & January 2027 Payout</h2>
+                <div class="result-card">
+                    <h3>2025/26 Arrears (Jul 2025 – Jun 2026)</h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Gross Arrears</div>
+                            <div class="stat-val" id="arr2526Gross">KES 0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Paid in 3 Equal Instalments</div>
+                            <div class="stat-val" id="arr2526Instalment">KES 0 each</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <h3>Arrears (Jul 2026 – Dec 2026)</h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Paid with Jan 2027 Salary</div>
+                            <div class="stat-val" id="arr2627Gross">KES 0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>5. Take-Home Pay (Current vs New)</h2>
+                <div id="takeHomeComparisonContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="disclaimer">
+        <strong>Scope and disclaimer:</strong> Unofficial demo based on KUSU Return to Work Formula schedules signed on 30 October 2026. Union dues are fixed at 2%[cite: 6]. Values calculated dynamically.
+    </div>
+</div>
+
+<script>
+    // KUSU House Allowances by Grade[cite: 1]
+    const houseAllowances = {
+        15: 73715, 14: 62658, 13: 58972, 12: 55286, 11: 47915,
+        10: 35383, 9: 31845, 8: 28307, 7: 24768, 6: 21230, 5: 17692
+    };
+
+    // KUSU Basic Salary Schedule 1 (2024/25 to 2028/29)
+    const kusuSalaries = {
+        15: [
+            [224631, 232494, 240632, 249055, 257772],
+            [233616, 244119, 252664, 261508, 270661],
+            [242962, 256325, 265297, 274583, 284194],
+            [252680, 269142, 278562, 288312, 298403],
+            [262789, 282599, 292490, 302728, 313324],
+            [273301, 296730, 307116, 317866, 328992],
+            [284233, 311567, 322472, 333759, 345441],
+            [295604, 327145, 338596, 350447, 362713],
+            [307428, 343504, 355527, 367971, 380850],
+            [319725, 360679, 373303, 386369, 399892],
+            [332515, 378714, 391969, 405688, 419888],
+            [345816, 397651, 411569, 425974, 440884]
+        ],
+        14: [
+            [173864, 179950, 186249, 192768, 199515],
+            [180819, 188948, 195562, 202407, 209492],
+            [188053, 198396, 205340, 212527, 219966],
+            [195574, 208316, 215608, 223155, 230966],
+            [203398, 218732, 226388, 234312, 242513],
+            [211534, 229669, 237708, 246028, 254639],
+            [219995, 241153, 249594, 258330, 267372],
+            [228796, 253211, 262074, 271247, 280741],
+            [237948, 265872, 275178, 284810, 294779],
+            [247467, 279167, 288938, 299051, 309518],
+            [257366, 293126, 303386, 314005, 324996],
+            [267662, 307783, 318556, 329706, 341246]
+        ],
+        13: [
+            [136171, 140937, 145870, 150976, 156261],
+            [141619, 147985, 153165, 158526, 164075],
+            [147284, 155384, 160823, 166452, 172278],
+            [153175, 163154, 168865, 174776, 180894],
+            [159303, 171312, 177308, 183514, 189937],
+            [165676, 179877, 186173, 192690, 199435],
+            [172303, 188871, 195482, 202324, 209406],
+            [179195, 198316, 205258, 212443, 219879],
+            [186365, 208232, 215521, 223065, 230873],
+            [193819, 218644, 226297, 234218, 242416],
+            [201572, 229577, 237613, 245930, 254538],
+            [209636, 241056, 249493, 258226, 267264]
+        ],
+        12: [
+            [119858, 124054, 128396, 132890, 137542],
+            [124653, 130256, 134815, 139534, 144418],
+            [129640, 136770, 141557, 146512, 151640],
+            [134826, 143609, 148636, 153839, 159224],
+            [140220, 150790, 156068, 161531, 167185],
+            [145829, 158330, 163872, 169608, 175545],
+            [151662, 166246, 172065, 178088, 184322],
+            [157729, 174559, 180669, 186993, 193538],
+            [164039, 183288, 189704, 196344, 203217],
+            [170600, 192453, 199189, 206161, 213377],
+            [177425, 202076, 209149, 216470, 224047],
+            [184523, 212181, 219608, 227295, 235251]
+        ],
+        11: [
+            [96006, 99367, 102845, 106445, 110171],
+            [99848, 104336, 107988, 111768, 115680],
+            [103842, 109553, 113388, 117357, 121465],
+            [107996, 115031, 119058, 123226, 127539],
+            [112317, 120784, 125012, 129388, 133917],
+            [116810, 126823, 131262, 135857, 140612],
+            [121482, 133165, 137826, 142650, 147643],
+            [126342, 139824, 144718, 149784, 155027],
+            [131395, 146815, 151954, 157273, 162778],
+            [136653, 154157, 159553, 165138, 170918],
+            [142119, 161865, 167531, 173395, 179464],
+            [147805, 169959, 175908, 182065, 188438]
+        ],
+        10: [
+            [63647, 65875, 68181, 70568, 73038],
+            [66194, 69170, 71591, 74097, 76691],
+            [68843, 72629, 75172, 77804, 80528],
+            [71596, 76260, 78930, 81693, 84553],
+            [74460, 80074, 82877, 85778, 88781],
+            [77439, 84079, 87022, 90068, 93221],
+            [80538, 88283, 91373, 94572, 97883],
+            [83759, 92697, 95942, 99300, 102776],
+            [87110, 97333, 100740, 104266, 107916],
+            [90594, 102201, 105779, 109482, 113314],
+            [94218, 107311, 111067, 114955, 118979],
+            [97988, 112678, 116622, 120704, 124929]
+        ],
+        9: [
+            [55373, 57312, 59318, 61395, 63544],
+            [57588, 60177, 62284, 64464, 66721],
+            [59892, 63187, 65399, 67688, 70058],
+            [62288, 66347, 68670, 71074, 73562],
+            [64779, 69665, 72104, 74628, 77240],
+            [67372, 73149, 75710, 78360, 81103],
+            [70067, 76807, 79496, 82279, 85159],
+            [72870, 80648, 83471, 86393, 89417],
+            [75785, 84680, 87644, 90712, 93887],
+            [78818, 88914, 92026, 95247, 98581],
+            [81971, 93361, 96629, 100012, 103513],
+            [85250, 98029, 101461, 105013, 108689]
+        ],
+        8: [
+            [47621, 49288, 51014, 52800, 54648],
+            [49527, 51754, 53566, 55441, 57382],
+            [51507, 54342, 56244, 58213, 60251],
+            [53568, 57060, 59058, 61126, 63266],
+            [55711, 59914, 62011, 64182, 66429],
+            [57941, 62910, 65112, 67391, 69750],
+            [60259, 66056, 68368, 70761, 73238],
+            [62671, 69360, 71788, 74301, 76902],
+            [65177, 72828, 75377, 78016, 80747],
+            [67785, 76470, 79147, 81918, 84786],
+            [70497, 80295, 83106, 86015, 89026],
+            [73317, 84310, 87261, 90316, 93478]
+        ],
+        7: [
+            [42858, 44359, 45912, 47519, 49183],
+            [44573, 46577, 48208, 49896, 51643],
+            [46357, 48906, 50618, 52390, 54224],
+            [48211, 51352, 53150, 55011, 56937],
+            [50140, 53920, 55808, 57762, 59784],
+            [52147, 56616, 58598, 60649, 62772],
+            [54233, 59448, 61529, 63683, 65912],
+            [56402, 62420, 64605, 66867, 69208],
+            [58660, 65542, 67836, 70211, 72669],
+            [61007, 68820, 71229, 73723, 76304],
+            [63448, 72261, 74791, 77409, 80119],
+            [65986, 75874, 78530, 81279, 84124]
+        ],
+        6: [
+            [36914, 38206, 39544, 40929, 42362],
+            [38392, 40117, 41522, 42976, 44481],
+            [39927, 42123, 43598, 45124, 46704],
+            [41525, 44229, 45778, 47381, 49040],
+            [43186, 46441, 48067, 49750, 51492],
+            [44913, 48763, 50470, 52237, 54066],
+            [46711, 51202, 52995, 54850, 56770],
+            [48580, 53763, 55645, 57593, 59609],
+            [50523, 56451, 58427, 60472, 62589],
+            [52544, 59275, 61350, 63498, 65721],
+            [54647, 62239, 64418, 66673, 69007],
+            [56833, 65351, 67639, 70007, 72458]
+        ],
+        5: [
+            [32485, 33622, 34799, 36017, 37278],
+            [33785, 35304, 36540, 37819, 39143],
+            [35137, 37070, 38368, 39711, 41101],
+            [36543, 38924, 40287, 41698, 43158],
+            [38004, 40871, 42302, 43783, 45316],
+            [39525, 42915, 44418, 45973, 47583],
+            [41106, 45061, 46639, 48272, 49962],
+            [42750, 47314, 48970, 50684, 52458],
+            [44461, 49680, 51419, 53219, 55082],
+            [46239, 52164, 53990, 55880, 57836],
+            [48089, 54773, 56691, 58676, 60730],
+            [50014, 57511, 59524, 61608, 63765]
+        ]
+    };
+
+    function formatCurrency(amount) {
+        return "KES " + Math.round(amount).toLocaleString();
+    }
+
+    function updateNotches() {
+        const grade = document.getElementById("gradeSelect").value;
+        const notchSelect = document.getElementById("notchSelect");
+        notchSelect.innerHTML = "";
+        
+        const salaries2024 = kusuSalaries[grade];
+        for (let i = 0; i < salaries2024.length; i++) {
+            const opt = document.createElement("option");
+            opt.value = i;
+            opt.text = `Notch ${i + 1} (${formatCurrency(salaries2024[i][0])})`;
+            notchSelect.add(opt);
+        }
+
+        // Update house allowance display automatically
+        document.getElementById("houseDisplay").value = formatCurrency(houseAllowances[grade]);
+        calculate();
+    }
+
+    function calculateTax(gross) {
+        // Simplified Kenyan PAYE tax bracket estimation
+        let taxable = gross;
+        let tax = 0;
+        if (taxable <= 24000) {
+            tax = taxable * 0.10;
+        } else if (taxable <= 32333) {
+            tax = 2400 + (taxable - 24000) * 0.25;
+        } else {
+            tax = 2400 + 2083.25 + (taxable - 32333) * 0.30;
+        }
+        return Math.max(0, tax - 2400); // Personal relief
+    }
+
+    function calculate() {
+        const grade = parseInt(document.getElementById("gradeSelect").value);
+        const notchIdx = parseInt(document.getElementById("notchSelect").value);
+        const commuter = parseFloat(document.getElementById("commuterInput").value) || 0;
+        const house = houseAllowances[grade];
+        const pensionRate = (parseFloat(document.getElementById("pensionInput").value) || 0) / 100;
+        const deductNssf = document.getElementById("deductNssf").checked;
+
+        const base2024 = kusuSalaries[grade][notchIdx][0];
+        
+        // Arrears 2025/26 (Jul 2025 - Jun 2026) basic difference
+        let diff202526 = kusuSalaries[grade][notchIdx][1] - kusuSalaries[grade][notchIdx][0];
+        let totalArr2526 = diff202526 * 12;
+
+        document.getElementById("arr2526Gross").innerText = formatCurrency(totalArr2526);
+        document.getElementById("arr2526Instalment").innerText = formatCurrency(totalArr2526 / 3) + " each";
+
+        // Arrears Jul-Dec 2026
+        let diff202627 = kusuSalaries[grade][notchIdx][2] - kusuSalaries[grade][notchIdx][0];
+        let totalArr2627 = diff202627 * 6;
+        document.getElementById("arr2627Gross").innerText = formatCurrency(totalArr2627);
+
+        // Salary Table HTML
+        let html = `<table>
+            <tr><th>Period / Rate</th><th>Basic</th><th>Allowances</th><th>Gross</th></tr>
+            <tr><td>Old Terms (2024/25)</td><td>${formatCurrency(base2024)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(base2024 + house + commuter)}</td></tr>
+            <tr><td>From Jul 2025</td><td>${formatCurrency(kusuSalaries[grade][notchIdx][1])}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(kusuSalaries[grade][notchIdx][1] + house + commuter)}</td></tr>
+            <tr><td>From Jul 2026</td><td>${formatCurrency(kusuSalaries[grade][notchIdx][2])}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(kusuSalaries[grade][notchIdx][2] + house + commuter)}</td></tr>
+            <tr><td>From Jul 2027</td><td>${formatCurrency(kusuSalaries[grade][notchIdx][3])}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(kusuSalaries[grade][notchIdx][3] + house + commuter)}</td></tr>
+            <tr><td>From Jul 2028</td><td>${formatCurrency(kusuSalaries[grade][notchIdx][4])}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(kusuSalaries[grade][notchIdx][4] + house + commuter)}</td></tr>
+        </table>`;
+        document.getElementById("salaryTableContainer").innerHTML = html;
+
+        // Take home comparison
+        let oldGross = base2024 + house + commuter;
+        let newBasicNov = kusuSalaries[grade][notchIdx][2];
+        let newGrossNov = newBasicNov + house + commuter;
+
+        let payeOld = calculateTax(oldGross);
+        let payeNew = calculateTax(newGrossNov);
+        let shifOld = oldGross * 0.0275;
+        let shifNew = newGrossNov * 0.0275;
+        let hlOld = oldGross * 0.015;
+        let hlNew = newGrossNov * 0.015;
+        let nssf = deductNssf ? 2160 : 0;
+        let pensionOld = base2024 * pensionRate;
+        let pensionNew = newBasicNov * pensionRate;
+        let unionOld = base2024 * 0.02;
+        let unionNew = newBasicNov * 0.02;
+
+        let netOld = oldGross - payeOld - shifOld - hlOld - nssf - pensionOld - unionOld;
+        let netNew = newGrossNov - payeNew - shifNew - hlNew - nssf - pensionNew - unionNew;
+
+        let compHtml = `<table>
+            <tr><th>Metric</th><th>Oct 2026 (Old)</th><th>Nov 2026 (New)</th><th>Change</th></tr>
+            <tr><td>Gross Pay</td><td>${formatCurrency(oldGross)}</td><td>${formatCurrency(newGrossNov)}</td><td>+${formatCurrency(newGrossNov - oldGross)}</td></tr>
+            <tr><td>Est. Take-Home</td><td><strong>${formatCurrency(netOld)}</strong></td><td><strong>${formatCurrency(netNew)}</strong></td><td><strong>+${formatCurrency(netNew - netOld)}</strong></td></tr>
+        </table>`;
+        document.getElementById("takeHomeComparisonContainer").innerHTML = compHtml;
+    }
+
+    // Initialize on load
+    window.onload = function() {
+        updateNotches();
+    };
+</script>
+
+</body>
+</html>
