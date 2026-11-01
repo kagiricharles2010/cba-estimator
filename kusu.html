@@ -50,6 +50,7 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
         th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); }
         th { background: var(--accent); color: var(--primary); font-weight: 600; }
+        tr.highlight-row { background-color: #f1f8f5; font-weight: bold; }
         
         .disclaimer { font-size: 0.75rem; color: var(--text-muted); margin-top: 20px; border-top: 1px solid var(--border); padding-top: 10px; }
     </style>
@@ -158,15 +159,15 @@
                 <h2>2. Allowances & Deductions</h2>
                 
                 <div class="form-group">
-                    <label>House Allowance (Auto-selected from Grade)</label>
+                    <label>House Allowance (Auto-selected based on active/promoted Grade)</label>
                     <input type="text" id="houseDisplay" readonly style="background:#e9ecef; font-weight:bold;">
-                    <div class="help-text">Mapped directly from KUSU Schedule[cite: 1].</div>
+                    <div class="help-text">Automatically updates to match the grade of your latest promotion[cite: 1].</div>
                 </div>
 
                 <div class="form-group">
                     <label for="commuterInput">Commuter Allowance (KES/month)</label>
-                    <input type="number" id="commuterInput" value="18000" oninput="calculate();">
-                    <div class="help-text">Harmonized RTWF rate is KES 18,000[cite: 10].</div>
+                    <input type="number" id="commuterInput" value="12000" oninput="calculate();">
+                    <div class="help-text">Default KES 12,000 (Harmonized RTWF rate is up to KES 18,000)[cite: 10].</div>
                 </div>
 
                 <div class="form-group">
@@ -262,7 +263,6 @@
             opt.text = `Notch ${i + 1} (${formatCurrency(salaries2024[i][0])})`;
             notchSelect.add(opt);
         }
-        document.getElementById("houseDisplay").value = formatCurrency(houseAllowances[grade]);
         calculate();
     }
 
@@ -279,8 +279,8 @@
     }
 
     function updatePromoNotches(num) {
-        const grade = document.getElementById(`promo%dGrade`.replace('%d', num)).value;
-        const notchSelect = document.getElementById(`promo%dNotch`.replace('%d', num));
+        const grade = document.getElementById(`promo${num}Grade`).value;
+        const notchSelect = document.getElementById(`promo${num}Notch`);
         notchSelect.innerHTML = "";
         const salaries2024 = kusuSalaries[grade];
         for (let i = 0; i < salaries2024.length; i++) {
@@ -300,11 +300,23 @@
         return Math.max(0, tax - 2400);
     }
 
+    function getActiveGrade() {
+        const promo2Active = document.getElementById("promo2Toggle").checked;
+        const promo1Active = document.getElementById("promo1Toggle").checked;
+        if (promo2Active) return parseInt(document.getElementById("promo2Grade").value);
+        if (promo1Active) return parseInt(document.getElementById("promo1Grade").value);
+        return parseInt(document.getElementById("gradeSelect").value);
+    }
+
     function calculate() {
-        const grade = parseInt(document.getElementById("gradeSelect").value);
-        const notchIdx = parseInt(document.getElementById("notchSelect").value || 0);
+        const startGrade = parseInt(document.getElementById("gradeSelect").value);
+        const startNotchIdx = parseInt(document.getElementById("notchSelect").value || 0);
+        
+        const activeGrade = getActiveGrade();
+        const house = houseAllowances[activeGrade];
+        document.getElementById("houseDisplay").value = `${formatCurrency(house)} (Grade ${activeGrade})`;
+
         const commuter = parseFloat(document.getElementById("commuterInput").value) || 0;
-        const house = houseAllowances[grade];
         const pensionRate = (parseFloat(document.getElementById("pensionInput").value) || 0) / 100;
         const deductNssf = document.getElementById("deductNssf").checked;
         const startVal = document.getElementById("startMonth").value;
@@ -313,14 +325,14 @@
         const startYear = parseInt(parts[0]);
         const startMonthIdx = parseInt(parts[1]) - 1;
 
-        const base2024 = kusuSalaries[grade][notchIdx][0];
-        const base2025 = kusuSalaries[grade][notchIdx][1];
-        const base2026 = kusuSalaries[grade][notchIdx][2];
+        const base2024 = kusuSalaries[startGrade][startNotchIdx][0];
+        const base2025 = kusuSalaries[startGrade][startNotchIdx][1];
+        const base2026 = kusuSalaries[activeGrade][startNotchIdx][2];
 
         // 1. Headline Card 1 (Green)
-        let activeBasic = startYear === 2026 ? base2026 : kusuSalaries[grade][notchIdx][3];
+        let activeBasic = startYear === 2026 ? base2026 : kusuSalaries[activeGrade][startNotchIdx][3];
         let activeGross = activeBasic + house + commuter;
-        document.getElementById("hlCard1Title").innerText = `${monthNames[startMonthIdx]} ${startYear} basic pay · Grade ${grade} · notch ${notchIdx + 1}`;
+        document.getElementById("hlCard1Title").innerText = `${monthNames[startMonthIdx]} ${startYear} basic pay · Grade ${activeGrade} · notch ${startNotchIdx + 1}`;
         document.getElementById("hlCard1Basic").innerText = formatCurrency(activeBasic);
         document.getElementById("hlCard1Footer").innerText = `Plus commuter ${commuter.toLocaleString()} + house ${house.toLocaleString()} = gross ${formatCurrency(activeGross)}`;
 
@@ -346,12 +358,12 @@
             <tr><td>Old Terms (2024/25)</td><td>${formatCurrency(base2024)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(base2024 + house + commuter)}</td></tr>
             <tr><td>From Jul 2025</td><td>${formatCurrency(base2025)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(base2025 + house + commuter)}</td></tr>
             <tr><td>From Jul 2026</td><td>${formatCurrency(base2026)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(base2026 + house + commuter)}</td></tr>
-            <tr><td>From Jul 2027</td><td>${formatCurrency(kusuSalaries[grade][notchIdx][3])}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(kusuSalaries[grade][notchIdx][3] + house + commuter)}</td></tr>
-            <tr><td>From Jul 2028</td><td>${formatCurrency(kusuSalaries[grade][notchIdx][4])}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(kusuSalaries[grade][notchIdx][4] + house + commuter)}</td></tr>
+            <tr><td>From Jul 2027</td><td>${formatCurrency(kusuSalaries[activeGrade][startNotchIdx][3])}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(kusuSalaries[activeGrade][startNotchIdx][3] + house + commuter)}</td></tr>
+            <tr><td>From Jul 2028</td><td>${formatCurrency(kusuSalaries[activeGrade][startNotchIdx][4])}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(kusuSalaries[activeGrade][startNotchIdx][4] + house + commuter)}</td></tr>
         </table>`;
         document.getElementById("salaryTableContainer").innerHTML = html;
 
-        // Take Home Comparison
+        // Expanded Take Home Breakdown Table
         let oldGross = base2024 + house + commuter;
         let payeOld = calculateTax(oldGross);
         let payeNew = calculateTax(activeGross);
@@ -369,9 +381,18 @@
         let netNew = activeGross - payeNew - shifNew - hlNew - nssf - pensionNew - unionNew;
 
         let compHtml = `<table>
-            <tr><th>Metric</th><th>Oct 2026 (Old)</th><th>${monthNames[startMonthIdx].substring(0, 3)} ${startYear} (New)</th><th>Change</th></tr>
-            <tr><td>Gross Pay</td><td>${formatCurrency(oldGross)}</td><td>${formatCurrency(activeGross)}</td><td>+${formatCurrency(activeGross - oldGross)}</td></tr>
-            <tr><td>Est. Take-Home</td><td><strong>${formatCurrency(netOld)}</strong></td><td><strong>${formatCurrency(netNew)}</strong></td><td><strong>+${formatCurrency(netNew - netOld)}</strong></td></tr>
+            <tr><th>Component</th><th>Oct 2026 (Old)</th><th>${monthNames[startMonthIdx].substring(0, 3)} ${startYear} (New)</th><th>Change</th></tr>
+            <tr><td>Basic Pay</td><td>${formatCurrency(base2024)}</td><td>${formatCurrency(activeBasic)}</td><td>+${formatCurrency(activeBasic - base2024)}</td></tr>
+            <tr><td>House Allowance</td><td>${formatCurrency(house)}</td><td>${formatCurrency(house)}</td><td>KES 0</td></tr>
+            <tr><td>Commuter Allowance</td><td>${formatCurrency(commuter)}</td><td>${formatCurrency(commuter)}</td><td>KES 0</td></tr>
+            <tr class="highlight-row"><td>Gross Pay</td><td>${formatCurrency(oldGross)}</td><td>${formatCurrency(activeGross)}</td><td>+${formatCurrency(activeGross - oldGross)}</td></tr>
+            <tr><td>PAYE (Estimated)</td><td>-${formatCurrency(payeOld)}</td><td>-${formatCurrency(payeNew)}</td><td>-${formatCurrency(payeNew - payeOld)}</td></tr>
+            <tr><td>SHIF (2.75%)</td><td>-${formatCurrency(shifOld)}</td><td>-${formatCurrency(shifNew)}</td><td>-${formatCurrency(shifNew - shifOld)}</td></tr>
+            <tr><td>Housing Levy (1.5%)</td><td>-${formatCurrency(hlOld)}</td><td>-${formatCurrency(hlNew)}</td><td>-${formatCurrency(hlNew - hlOld)}</td></tr>
+            <tr><td>NSSF</td><td>-${formatCurrency(nssf)}</td><td>-${formatCurrency(nssf)}</td><td>KES 0</td></tr>
+            <tr><td>Pension (${(pensionRate*100).toFixed(1)}%)</td><td>-${formatCurrency(pensionOld)}</td><td>-${formatCurrency(pensionNew)}</td><td>-${formatCurrency(pensionNew - pensionOld)}</td></tr>
+            <tr><td>Union Dues (2%)</td><td>-${formatCurrency(unionOld)}</td><td>-${formatCurrency(unionNew)}</td><td>-${formatCurrency(unionNew - unionOld)}</td></tr>
+            <tr class="highlight-row"><td>Est. Take-Home</td><td>${formatCurrency(netOld)}</td><td>${formatCurrency(netNew)}</td><td>+${formatCurrency(netNew - netOld)}</td></tr>
         </table>`;
         document.getElementById("takeHomeComparisonContainer").innerHTML = compHtml;
     }
