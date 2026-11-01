@@ -34,6 +34,7 @@
         .help-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
         
         .checkbox-group { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 0.85rem; }
+        .sub-box { border-left: 3px solid var(--primary-light); padding-left: 10px; margin-top: 8px; margin-bottom: 10px; }
         
         /* Headline Cards Grid */
         .headline-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
@@ -99,6 +100,57 @@
                         <option value="2026-12" selected>December 2026</option>
                         <option value="2027-01">January 2027</option>
                     </select>
+                </div>
+
+                <!-- PROMOTIONS SECTION -->
+                <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 12px;">
+                    <label style="font-weight:700; margin-bottom:6px;">Did you get a promotion within the CBA period (from July 2025)?</label>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="promo1Toggle" onchange="togglePromo1(); calculate();">
+                        <label for="promo1Toggle" style="display:inline; font-weight:normal;">First promotion</label>
+                    </div>
+                    <div id="promo1Box" class="sub-box" style="display:none;">
+                        <div class="form-group">
+                            <label>Effective Month</label>
+                            <select id="promo1Month" onchange="calculate();">
+                                <option value="2025-07">July 2025</option><option value="2025-08">August 2025</option><option value="2025-09">September 2025</option><option value="2025-10">October 2025</option><option value="2025-11">November 2025</option><option value="2025-12">December 2025</option><option value="2026-01">January 2026</option><option value="2026-02">February 2026</option><option value="2026-03">March 2026</option><option value="2026-04">April 2026</option><option value="2026-05">May 2026</option><option value="2026-06">June 2026</option><option value="2026-07" selected>July 2026</option><option value="2026-08">August 2026</option><option value="2026-09">September 2026</option><option value="2026-10">October 2026</option><option value="2026-11">November 2026</option><option value="2026-12">December 2026</option><option value="2027-01">January 2027</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>New Grade</label>
+                            <select id="promo1Grade" onchange="updatePromoNotches(1); calculate();">
+                                <option value="15">Grade 15</option><option value="14">Grade 14</option><option value="13">Grade 13</option><option value="12" selected>Grade 12</option><option value="11">Grade 11</option><option value="10">Grade 10</option><option value="9">Grade 9</option><option value="8">Grade 8</option><option value="7">Grade 7</option><option value="6">Grade 6</option><option value="5">Grade 5</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>New Notch</label>
+                            <select id="promo1Notch" onchange="calculate();"></select>
+                        </div>
+                    </div>
+
+                    <div class="checkbox-group" style="margin-top: 10px;">
+                        <input type="checkbox" id="promo2Toggle" onchange="togglePromo2(); calculate();">
+                        <label for="promo2Toggle" style="display:inline; font-weight:normal;">Second promotion</label>
+                    </div>
+                    <div id="promo2Box" class="sub-box" style="display:none;">
+                        <div class="form-group">
+                            <label>Effective Month</label>
+                            <select id="promo2Month" onchange="calculate();">
+                                <option value="2026-07" selected>July 2026</option><option value="2026-08">August 2026</option><option value="2026-09">September 2026</option><option value="2026-10">October 2026</option><option value="2026-11">November 2026</option><option value="2026-12">December 2026</option><option value="2027-01">January 2027</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>New Grade</label>
+                            <select id="promo2Grade" onchange="updatePromoNotches(2); calculate();">
+                                <option value="15">Grade 15</option><option value="14" selected>Grade 14</option><option value="13">Grade 13</option><option value="12">Grade 12</option><option value="11">Grade 11</option><option value="10">Grade 10</option><option value="9">Grade 9</option><option value="8">Grade 8</option><option value="7">Grade 7</option><option value="6">Grade 6</option><option value="5">Grade 5</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>New Notch</label>
+                            <select id="promo2Notch" onchange="calculate();"></select>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -202,18 +254,41 @@
         const grade = document.getElementById("gradeSelect").value;
         const notchSelect = document.getElementById("notchSelect");
         notchSelect.innerHTML = "";
-        
         const salaries2024 = kusuSalaries[grade];
         for (let i = 0; i < salaries2024.length; i++) {
             const opt = document.createElement("option");
             opt.value = i;
-            if (i === 8 && grade === "13") opt.selected = true; // default notch 9
+            if (i === 8 && grade === "13") opt.selected = true;
             opt.text = `Notch ${i + 1} (${formatCurrency(salaries2024[i][0])})`;
             notchSelect.add(opt);
         }
-
         document.getElementById("houseDisplay").value = formatCurrency(houseAllowances[grade]);
         calculate();
+    }
+
+    function togglePromo1() {
+        const show = document.getElementById("promo1Toggle").checked;
+        document.getElementById("promo1Box").style.display = show ? "block" : "none";
+        if (show) updatePromoNotches(1);
+    }
+
+    function togglePromo2() {
+        const show = document.getElementById("promo2Toggle").checked;
+        document.getElementById("promo2Box").style.display = show ? "block" : "none";
+        if (show) updatePromoNotches(2);
+    }
+
+    function updatePromoNotches(num) {
+        const grade = document.getElementById(`promo%dGrade`.replace('%d', num)).value;
+        const notchSelect = document.getElementById(`promo%dNotch`.replace('%d', num));
+        notchSelect.innerHTML = "";
+        const salaries2024 = kusuSalaries[grade];
+        for (let i = 0; i < salaries2024.length; i++) {
+            const opt = document.createElement("option");
+            opt.value = i;
+            opt.text = `Notch ${i + 1} (${formatCurrency(salaries2024[i][0])})`;
+            notchSelect.add(opt);
+        }
     }
 
     function calculateTax(gross) {
@@ -232,11 +307,11 @@
         const house = houseAllowances[grade];
         const pensionRate = (parseFloat(document.getElementById("pensionInput").value) || 0) / 100;
         const deductNssf = document.getElementById("deductNssf").checked;
-        const startVal = document.getElementById("startMonth").value; // e.g., "2026-12"
+        const startVal = document.getElementById("startMonth").value;
 
         const parts = startVal.split("-");
         const startYear = parseInt(parts[0]);
-        const startMonthIdx = parseInt(parts[1]) - 1; // 0-indexed month
+        const startMonthIdx = parseInt(parts[1]) - 1;
 
         const base2024 = kusuSalaries[grade][notchIdx][0];
         const base2025 = kusuSalaries[grade][notchIdx][1];
@@ -303,6 +378,8 @@
 
     window.onload = function() {
         updateNotches();
+        updatePromoNotches(1);
+        updatePromoNotches(2);
     };
 </script>
 
