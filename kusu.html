@@ -70,7 +70,7 @@
 
 <div class="container">
     <div class="demo-banner">
-        <strong>Demo</strong> · Unofficial estimate for KUSU staff based on the Return to Work Formula of 30 October 2026[cite: 3].
+        <strong>Demo</strong> · Unofficial estimate for KUSU staff based on the Return to Work Formula of 30 October 2026.
     </div>
 
     <h1>2025–2029 CBA Pay Estimator (KUSU)</h1>
@@ -84,7 +84,7 @@
                 
                 <div class="form-group">
                     <label for="gradeSelect">Grade on July 2025 Payslip</label>
-                    <select id="gradeSelect" onchange="updateNotches(); calculate();">
+                    <select id="gradeSelect" onchange="updateNotches(); onBaseGradeChange(); calculate();">
                         <option value="15">Grade 15</option>
                         <option value="14">Grade 14</option>
                         <option value="13">Grade 13</option>
@@ -151,7 +151,7 @@
                         <div class="form-group">
                             <label>New Grade</label>
                             <select id="promo1Grade" onchange="updatePromoNotches(1); calculate();">
-                                <option value="15">Grade 15</option><option value="14">Grade 14</option><option value="13">Grade 13</option><option value="12">Grade 12</option><option value="11">Grade 11</option><option value="10">Grade 10</option><option value="9">Grade 9</option><option value="8" selected>Grade 8</option><option value="7">Grade 7</option><option value="6">Grade 6</option><option value="5">Grade 5</option>
+                                <option value="15">Grade 15</option><option value="14">Grade 14</option><option value="13">Grade 13</option><option value="12">Grade 12</option><option value="11">Grade 11</option><option value="10">Grade 10</option><option value="9" selected>Grade 9</option><option value="8">Grade 8</option><option value="7">Grade 7</option><option value="6">Grade 6</option><option value="5">Grade 5</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -174,7 +174,7 @@
                         <div class="form-group">
                             <label>New Grade</label>
                             <select id="promo2Grade" onchange="updatePromoNotches(2); calculate();">
-                                <option value="15">Grade 15</option><option value="14">Grade 14</option><option value="13">Grade 13</option><option value="12">Grade 12</option><option value="11">Grade 11</option><option value="10">Grade 10</option><option value="9" selected>Grade 9</option><option value="8">Grade 8</option><option value="7">Grade 7</option><option value="6">Grade 6</option><option value="5">Grade 5</option>
+                                <option value="15">Grade 15</option><option value="14">Grade 14</option><option value="13">Grade 13</option><option value="12">Grade 12</option><option value="11">Grade 11</option><option value="10" selected>Grade 10</option><option value="9">Grade 9</option><option value="8">Grade 8</option><option value="7">Grade 7</option><option value="6">Grade 6</option><option value="5">Grade 5</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -191,7 +191,7 @@
                 <div class="form-group">
                     <label>House Allowance (Auto-selected based on active/promoted Grade)</label>
                     <input type="text" id="houseDisplay" readonly style="background:#e9ecef; font-weight:bold;">
-                    <div class="help-text">Automatically updates to match the grade of your latest promotion.</div>
+                    <div class="help-text">Automatically updates to match the grade of your latest promotion[cite: 1].</div>
                 </div>
 
                 <div class="form-group">
@@ -291,28 +291,92 @@
     function updateNotches() {
         const grade = document.getElementById("gradeSelect").value;
         const notchSelect = document.getElementById("notchSelect");
+        const currentSelected = notchSelect.value;
         notchSelect.innerHTML = "";
         const salaries2024 = kusuSalaries[grade];
         for (let i = 0; i < salaries2024.length; i++) {
             const opt = document.createElement("option");
             opt.value = i;
-            if (i === 8 && grade === "8") opt.selected = true;
+            if (currentSelected !== "" && parseInt(currentSelected) < salaries2024.length) {
+                if (i === parseInt(currentSelected)) opt.selected = true;
+            } else {
+                if (i === 8 && grade === "8") opt.selected = true;
+            }
             opt.text = `Notch ${i + 1} (${formatCurrency(salaries2024[i][0])})`;
             notchSelect.add(opt);
         }
-        calculate();
+        if (notchSelect.selectedIndex === -1 && notchSelect.options.length > 0) {
+            notchSelect.selectedIndex = 0;
+        }
+    }
+
+    function onBaseGradeChange() {
+        updateNotches();
+        // Reset/update promo dropdown defaults based on new base grade
+        if (document.getElementById("promo1Toggle").checked) setSmartPromoDefaults(1);
+        if (document.getElementById("promo2Toggle").checked) setSmartPromoDefaults(2);
+    }
+
+    // Automatically determine intelligent defaults for promotion grade & notch
+    function setSmartPromoDefaults(num) {
+        let referenceGrade, referenceNotchIdx;
+
+        if (num === 1) {
+            referenceGrade = parseInt(document.getElementById("gradeSelect").value);
+            referenceNotchIdx = parseInt(document.getElementById("notchSelect").value || 0);
+        } else {
+            // For second promotion, reference first promotion if active, otherwise base
+            if (document.getElementById("promo1Toggle").checked) {
+                referenceGrade = parseInt(document.getElementById("promo1Grade").value);
+                referenceNotchIdx = parseInt(document.getElementById("promo1Notch").value || 0);
+            } else {
+                referenceGrade = parseInt(document.getElementById("gradeSelect").value);
+                referenceNotchIdx = parseInt(document.getElementById("notchSelect").value || 0);
+            }
+        }
+
+        let targetGrade = Math.min(15, referenceGrade + 1);
+        const gradeSelectElem = document.getElementById(`promo${num}Grade`);
+        gradeSelectElem.value = targetGrade;
+
+        // Get current basic salary to beat
+        const currentBasic = kusuSalaries[referenceGrade][referenceNotchIdx][0];
+
+        // Populate notches and select the lowest notch with a higher basic salary
+        const notchSelect = document.getElementById(`promo${num}Notch`);
+        notchSelect.innerHTML = "";
+        const newSalaries = kusuSalaries[targetGrade];
+        let bestNotchIdx = 0;
+        let foundHigher = false;
+
+        for (let i = 0; i < newSalaries.length; i++) {
+            const opt = document.createElement("option");
+            opt.value = i;
+            opt.text = `Notch ${i + 1} (${formatCurrency(newSalaries[i][0])})`;
+            notchSelect.add(opt);
+
+            if (!foundHigher && newSalaries[i][0] > currentBasic) {
+                bestNotchIdx = i;
+                foundHigher = true;
+            }
+        }
+        notchSelect.value = bestNotchIdx;
     }
 
     function togglePromo1() {
         const show = document.getElementById("promo1Toggle").checked;
         document.getElementById("promo1Box").style.display = show ? "block" : "none";
-        if (show) updatePromoNotches(1);
+        if (show) {
+            setSmartPromoDefaults(1);
+        }
     }
 
     function togglePromo2() {
         const show = document.getElementById("promo2Toggle").checked;
         document.getElementById("promo2Box").style.display = show ? "block" : "none";
-        if (show) updatePromoNotches(2);
+        if (show) {
+            setSmartPromoDefaults(2);
+        }
     }
 
     function updatePromoNotches(num) {
@@ -380,8 +444,6 @@
             if (curY === 2028 && curM >= 7 || curY > 2028) colIdx = 4;
 
             let basicPay = kusuSalaries[currentGrade][currentNotch][colIdx];
-            
-            // Baseline (staying on 2024/25 rates with same increments/promotions)
             let baselineBasic = kusuSalaries[startGrade][startNotch][0];
 
             salaries.push({year: curY, month: curM, basic: basicPay, baseline: baselineBasic, grade: currentGrade, notch: currentNotch});
@@ -443,9 +505,9 @@
         document.getElementById("hlCard3Title").innerText = `Arrears Jul – ${precedingMonthName.substring(0, 3)} 2026 (gross)`;
         document.getElementById("hlCard3Gross").innerText = formatCurrency(totalArr2627);
 
-        // Section 5: Cumulative Gain Calculation & Rendering (4 Financial Years)
+        // Section 5: Cumulative Gain Calculation & Rendering
         let fyGains = [0, 0, 0, 0];
-        let fyNotches = [timeline[11], timeline[23], timeline[35], timeline[47]]; // End of each FY (June)
+        let fyNotches = [timeline[11], timeline[23], timeline[35], timeline[47]];
 
         for (let i = 0; i < 48; i++) {
             let fyIdx = Math.floor(i / 12);
@@ -538,8 +600,10 @@
 
     window.onload = function() {
         updateNotches();
-        updatePromoNotches(1);
-        updatePromoNotches(2);
+        // Set default intelligent promo values on load if toggled
+        if (document.getElementById("promo1Toggle").checked) setSmartPromoDefaults(1);
+        if (document.getElementById("promo2Toggle").checked) setSmartPromoDefaults(2);
+        calculate();
     };
 </script>
 
