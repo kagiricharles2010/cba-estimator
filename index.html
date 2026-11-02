@@ -110,8 +110,8 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .gb-tot{display:flex;justify-content:space-between;border-top:2px solid var(--ink);margin-top:14px;padding-top:8px;font-weight:700}
 @media (max-width:620px){.gb{grid-template-columns:1fr auto;row-gap:4px}.gb-t{grid-column:1 / -1;grid-row:2}.gb-l{flex-direction:row;gap:8px;align-items:baseline}}
 .pdf-box{margin:0 auto 18px;max-width:420px}
-.pdf-btn{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:15px;font-weight:600;background:#fff;color:var(--green);border:1.5px solid var(--green);border-radius:999px;padding:9px 20px;cursor:pointer}
-.pdf-btn:hover{background:var(--green-soft)}
+.pdf-btn{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:15px;font-weight:600;background:#c62828;color:#fff;border:0;border-radius:999px;padding:10px 20px;cursor:pointer}
+.pdf-btn:hover{background:#a51f1f}
 .pdf-note{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.4}
 .print-summary{display:none}
 @media print{
@@ -136,7 +136,7 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .juice-btn{font:inherit;font-size:15px;font-weight:600;background:var(--green);color:#fff;border:0;border-radius:999px;padding:10px 20px;cursor:pointer}
 .juice-btn:hover{filter:brightness(1.1)}
 .juice[hidden],.juice-rev[hidden],.juice-btn[hidden]{display:none}
-.juice-rev{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}
+.juice-rev{margin-top:12px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}
 .juice-num{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;background:var(--green-soft);color:var(--green);border-radius:999px;padding:9px 16px}
 .juice-name{flex-basis:100%;font-size:14px;font-weight:600;color:var(--ink)}
 .juice-copy{font:inherit;font-size:13.5px;font-weight:600;border:1px solid var(--green);background:#fff;color:var(--green);border-radius:999px;padding:7px 14px;cursor:pointer}
@@ -615,8 +615,12 @@ $("pdfBtn").addEventListener("click", ()=>{ fillPrintSummary(); try{ window.prin
 
 // donate button: number assembled at runtime so it isn't plain text in the page
 (()=>{ const parts=["0721","643","535"];
-  $("juiceBtn").addEventListener("click",()=>{ $("juiceNum").textContent="WhatsApp/Safaricom ("+parts.join(" ")+")"; $("juiceBtn").hidden=true; $("juiceRev").hidden=false;
-    try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path:"contact-click", title:"Clicked: contact developer", event:true}); }catch(e){} });
+  $("juiceBtn").addEventListener("click",()=>{
+    const show = $("juiceRev").hidden;            // tap to show, tap again to hide
+    $("juiceNum").textContent = show ? "WhatsApp/Safaricom ("+parts.join(" ")+")" : "";
+    $("juiceRev").hidden = !show; $("juiceBtn").setAttribute("aria-expanded", String(show));
+    if(!show) $("juiceCopy").textContent = "Copy number";
+    if(show) try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path:"contact-click", title:"Clicked: contact developer", event:true}); }catch(e){} });
   $("juiceCopy").addEventListener("click",async()=>{ try{ await navigator.clipboard.writeText(parts.join("")); $("juiceCopy").textContent="Copied ✓"; }catch(e){ $("juiceCopy").textContent="Copy failed: long-press the number"; } });
 })();
 
@@ -645,7 +649,7 @@ const defaultOf = el => {
 function resetForm(){
   FIELDS.forEach(el=>{ const d=defaultOf(el); if(el.type==="checkbox") el.checked=d; else el.value=d; delete el.dataset.touched; });
   PAIRS.forEach(([gs,ns])=>{ if($(gs)) fillNotches($(ns),$(gs).value, JS_DEFAULTS[ns]); });
-  const jr=$("juiceRev"), jb=$("juiceBtn"); if(jr){ jr.hidden=true; jb.hidden=false; }
+  const jr=$("juiceRev"); if(jr){ jr.hidden=true; $("juiceNum").textContent=""; }
   syncPromo(); compute();
 }
 window.addEventListener("pageshow", ()=>setTimeout(resetForm,0));   // fires on first load, refresh and back/forward
