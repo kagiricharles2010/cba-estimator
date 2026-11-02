@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2025–2029 CBA Pay Estimator for KUSU (Demo): NOW STARTING JUNE 2025</title>
+    <title>2025–2029 CBA Pay Estimator for KUSU (Demo)</title>
     <style>
         :root {
             --primary: #1b4332;
@@ -165,7 +165,7 @@
 
                 <!-- PROMOTIONS SECTION -->
                 <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 12px;">
-                    <label style="font-weight:700; margin-bottom:6px;">Did you get a promotion within the CBA period (from July 2025)?</label>
+                    <label style="font-weight:700; margin-bottom:6px;">Did you get a promotion within the CBA period (from June 2025)?</label>
                     
                     <div class="checkbox-group">
                         <input type="checkbox" id="promo1Toggle" onchange="togglePromo1(); calculate();">
@@ -454,7 +454,7 @@
         let currentNotch = startNotch;
         let salaries = [];
         let curY = 2025;
-        let curM = 7;
+        let curM = 6; // Start baseline at June 2025
 
         for (let i = 0; i < 48; i++) {
             let ymStr = `${curY}-${String(curM).padStart(2, '0')}`;
@@ -474,14 +474,22 @@
                 }
             }
 
+            // Apply annual increment when the month matches incrementMonth
             if (i > 0 && curM === incMonth) {
                 if (currentNotch < 11) currentNotch++;
             }
 
-            let colIdx = 1;
-            if (curY === 2026 && curM >= 7 || curY > 2026) colIdx = 2;
-            if (curY === 2027 && curM >= 7 || curY > 2027) colIdx = 3;
-            if (curY === 2028 && curM >= 7 || curY > 2028) colIdx = 4;
+            // Determine CBA scale column index based on timeline year/month
+            // June 2025 (i=0) uses col 0 (2024/25 baseline).
+            // Jul 2025 - Jun 2026 uses col 1 (2025/26).
+            // Jul 2026 - Jun 2027 uses col 2 (2026/27).
+            // Jul 2027 - Jun 2028 uses col 3 (2027/28).
+            // Jul 2028 onwards uses col 4 (2028/29).
+            let colIdx = 0;
+            if (curY === 2025 && curM >= 7 || curY === 2026 && curM < 7) colIdx = 1;
+            else if (curY === 2026 && curM >= 7 || curY === 2027 && curM < 7) colIdx = 2;
+            else if (curY === 2027 && curM >= 7 || curY === 2028 && curM < 7) colIdx = 3;
+            else if (curY >= 2028 && curM >= 7 || curY > 2028) colIdx = 4;
 
             let basicPay = kusuSalaries[currentGrade][currentNotch][colIdx];
             let baselineBasic = kusuSalaries[startGrade][startNotch][0];
@@ -527,7 +535,15 @@
         const timeline = getSalaryTimeline(startGrade, startNotchIdx, incMonth);
 
         let targetTimelineItem = timeline.find(t => t.year === startYear && t.month === (startMonthIdx + 1));
-        let activeBasic = targetTimelineItem ? targetTimelineItem.basic : kusuSalaries[activeGrade][startNotchIdx][2];
+        
+        // Find column index for active pay evaluation
+        let activeColIdx = 2; // Default 2026/27 for Dec 2026
+        if (startYear === 2025 && startMonthIdx >= 6 || startYear === 2026 && startMonthIdx < 6) activeColIdx = 1;
+        else if (startYear === 2026 && startMonthIdx >= 6 || startYear === 2027 && startMonthIdx < 6) activeColIdx = 2;
+        else if (startYear === 2027 && startMonthIdx >= 6 || startYear === 2028 && startMonthIdx < 6) activeColIdx = 3;
+        else if (startYear >= 2028) activeColIdx = 4;
+
+        let activeBasic = targetTimelineItem ? targetTimelineItem.basic : kusuSalaries[activeGrade][startNotchIdx][activeColIdx];
         let activeGross = activeBasic + house + commuter;
 
         // 1. Headline Card 1 (Green)
@@ -535,32 +551,37 @@
         document.getElementById("hlCard1Basic").innerText = formatCurrency(activeBasic);
         document.getElementById("hlCard1Footer").innerText = `Plus commuter ${commuter.toLocaleString()} + house ${house.toLocaleString()} = gross ${formatCurrency(activeGross)}`;
 
-        // 2. Headline Card 2 (2025/26 Arrears)
+        // 2. Headline Card 2 (2025/26 Arrears: indices 1 to 12 cover July 2025 to June 2026)
         let totalArr2526 = 0;
-        for (let i = 0; i < 12; i++) {
+        for (let i = 1; i <= 12; i++) {
             totalArr2526 += (timeline[i].basic - timeline[i].baseline);
         }
         let instalment = totalArr2526 / 3;
         document.getElementById("hlCard2Gross").innerText = formatCurrency(totalArr2526);
         document.getElementById("hlCard2Instalments").innerText = `3 instalments of ${formatCurrency(instalment)}`;
 
-        // 3. Headline Card 3 (Dynamic Preceding Arrears)
-        let months2026Count = (startYear === 2026) ? (startMonthIdx - 6) : 6;
+        // 3. Headline Card 3 (Dynamic Preceding Arrears from July 2026 up to startMonth)
         let totalArr2627 = 0;
-        for (let i = 12; i < 12 + months2026Count; i++) {
-            totalArr2627 += (timeline[i].basic - timeline[i].baseline);
+        for (let i = 13; i < timeline.length; i++) {
+            let tItem = timeline[i];
+            if (tItem.year < startYear || (tItem.year === startYear && tItem.month <= (startMonthIdx + 1))) {
+                totalArr2627 += (tItem.basic - tItem.baseline);
+            }
         }
         let precedingMonthName = monthNames[(startMonthIdx - 1 + 12) % 12];
-        document.getElementById("hlCard3Title").innerText = `Arrears Jul – ${precedingMonthName.substring(0, 3)} 2026 (gross)`;
+        document.getElementById("hlCard3Title").innerText = `Arrears Jul – ${precedingMonthName.substring(0, 3)} ${startYear} (gross)`;
         document.getElementById("hlCard3Gross").innerText = formatCurrency(totalArr2627);
 
-        // Section 5: Cumulative Gain Calculation & Rendering
+        // Section 5: Cumulative Gain Calculation & Rendering (4 financial years: FY 2025/26 to FY 2028/29)
         let fyGains = [0, 0, 0, 0];
-        let fyNotches = [timeline[11], timeline[23], timeline[35], timeline[47]];
+        // Indices 1-12 (FY 25/26), 13-24 (FY 26/27), 25-36 (FY 27/28), 37-48 (FY 28/29)
+        let fyNotches = [timeline[12], timeline[24], timeline[36], timeline[47]];
 
-        for (let i = 0; i < 48; i++) {
-            let fyIdx = Math.floor(i / 12);
-            fyGains[fyIdx] += (timeline[i].basic - timeline[i].baseline);
+        for (let i = 1; i <= 48 && i < timeline.length; i++) {
+            let fyIdx = Math.floor((i - 1) / 12);
+            if (fyIdx < 4) {
+                fyGains[fyIdx] += (timeline[i].basic - timeline[i].baseline);
+            }
         }
 
         let maxGain = Math.max(...fyGains, 1);
@@ -603,13 +624,18 @@
 
         // Salary Table HTML
         const base2024 = kusuSalaries[startGrade][startNotchIdx][0];
+        let tJul25 = timeline.find(t => t.year === 2025 && t.month === 7) || timeline[1];
+        let tJul26 = timeline.find(t => t.year === 2026 && t.month === 7) || timeline[13];
+        let tJul27 = timeline.find(t => t.year === 2027 && t.month === 7) || timeline[25];
+        let tJul28 = timeline.find(t => t.year === 2028 && t.month === 7) || timeline[37];
+
         let html = `<table>
             <tr><th>Period / Rate</th><th>Basic</th><th>Allowances</th><th>Gross</th></tr>
-            <tr><td>Old Terms (2024/25)</td><td>${formatCurrency(base2024)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(base2024 + house + commuter)}</td></tr>
-            <tr><td>From Jul 2025</td><td>${formatCurrency(timeline[0].basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(timeline[0].basic + house + commuter)}</td></tr>
-            <tr><td>From Jul 2026</td><td>${formatCurrency(timeline[12].basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(timeline[12].basic + house + commuter)}</td></tr>
-            <tr><td>From Jul 2027</td><td>${formatCurrency(timeline[24] ? timeline[24].basic : timeline[12].basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency((timeline[24] ? timeline[24].basic : timeline[12].basic) + house + commuter)}</td></tr>
-            <tr><td>From Jul 2028</td><td>${formatCurrency(timeline[36] ? timeline[36].basic : timeline[12].basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency((timeline[36] ? timeline[36].basic : timeline[12].basic) + house + commuter)}</td></tr>
+            <tr><td>Old Terms (June 2025)</td><td>${formatCurrency(base2024)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(base2024 + house + commuter)}</td></tr>
+            <tr><td>From Jul 2025</td><td>${formatCurrency(tJul25.basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(tJul25.basic + house + commuter)}</td></tr>
+            <tr><td>From Jul 2026</td><td>${formatCurrency(tJul26.basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(tJul26.basic + house + commuter)}</td></tr>
+            <tr><td>From Jul 2027</td><td>${formatCurrency(tJul27.basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(tJul27.basic + house + commuter)}</td></tr>
+            <tr><td>From Jul 2028</td><td>${formatCurrency(tJul28.basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(tJul28.basic + house + commuter)}</td></tr>
         </table>`;
         document.getElementById("salaryTableContainer").innerHTML = html;
 
@@ -635,7 +661,7 @@
         let netNew = activeGross - payeNew - shifNew - hlNew - nssf - pensionNew - unionNew;
 
         let compHtml = `<table>
-            <tr><th>Component</th><th>Oct 2026 (Old)</th><th>${monthNames[startMonthIdx].substring(0, 3)} ${startYear} (New)</th><th>Change</th></tr>
+            <tr><th>Component</th><th>June 2025 (Old)</th><th>${monthNames[startMonthIdx].substring(0, 3)} ${startYear} (New)</th><th>Change</th></tr>
             <tr><td>Basic Pay</td><td>${formatCurrency(base2024)}</td><td>${formatCurrency(activeBasic)}</td><td>+${formatCurrency(activeBasic - base2024)}</td></tr>
             <tr><td>House Allowance</td><td>${formatCurrency(house)}</td><td>${formatCurrency(house)}</td><td>KES 0</td></tr>
             <tr><td>Commuter Allowance</td><td>${formatCurrency(commuter)}</td><td>${formatCurrency(commuter)}</td><td>KES 0</td></tr>
