@@ -111,6 +111,7 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .juice[hidden],.juice-rev[hidden],.juice-btn[hidden]{display:none}
 .juice-rev{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}
 .juice-num{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;background:var(--green-soft);color:var(--green);border-radius:999px;padding:9px 16px}
+.juice-name{flex-basis:100%;font-size:14px;font-weight:600;color:var(--ink)}
 .juice-copy{font:inherit;font-size:13.5px;font-weight:600;border:1px solid var(--green);background:#fff;color:var(--green);border-radius:999px;padding:7px 14px;cursor:pointer}
 .note{font-size:13px;color:var(--muted);margin-top:10px}
 .assume{background:var(--amber-soft);border:1px solid #ecd9ae;border-radius:8px;padding:10px 14px;font-size:13.5px;color:#5c3a00}
@@ -133,7 +134,7 @@ footer p{margin:0 0 10px}
   <h1>2025–2029 CBA pay estimator</h1>
   <div class="notice"><span class="notice-tag">New</span> <span><b>Now starts from your June 2025 grade and notch.</b> Used it before? Re-select your notch.</span></div>
   <p class="sub">Ballpark new pay and arrears for public university academic staff, from the RTWF of 30 Oct 2026.</p>
-  <p class="sub" style="margin-top:4px">Read the tables diagonally: across each July (+3.5%), down a notch at each increment (+5%).</p>
+  <p class="sub" style="margin-top:4px">To counter-check with the RTWF schedules, you can now read the tables diagonally.</p>
 </header>
 
 <div class="wrap">
@@ -242,11 +243,11 @@ footer p{margin:0 0 10px}
     </ul>
     <p><b>Source:</b> Return to Work Formula, IPUCCF (FKE) and UASU, 30 Oct 2026. Schedules I and II. <b>Where your copy differs, your copy is right.</b></p>
   </div>
-  <div class="juice" hidden>
-    <p class="juice-q">Arrears looking good?</p>
-    <button type="button" class="juice-btn" id="juiceBtn">🧃 Buy the don a juice</button>
+  <div class="juice">
+    <button type="button" class="juice-btn" id="juiceBtn">Questions and Compliments to Developer</button>
     <div class="juice-rev" id="juiceRev" hidden>
       <span class="juice-num" id="juiceNum"></span>
+      <span class="juice-name">Dr. Charles Kagiri, PhD</span>
       <button type="button" class="juice-copy" id="juiceCopy">Copy number</button>
     </div>
   </div>
@@ -559,7 +560,8 @@ document.querySelectorAll("select,input").forEach(el=>{ el.addEventListener("inp
 
 // donate button: number assembled at runtime so it isn't plain text in the page
 (()=>{ const parts=["0721","643","535"];
-  $("juiceBtn").addEventListener("click",()=>{ $("juiceNum").textContent="Pochi la Biashara · "+parts.join(" "); $("juiceBtn").hidden=true; $("juiceRev").hidden=false; });
+  $("juiceBtn").addEventListener("click",()=>{ $("juiceNum").textContent="WhatsApp/Safaricom ("+parts.join(" ")+")"; $("juiceBtn").hidden=true; $("juiceRev").hidden=false;
+    try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path:"contact-click", title:"Clicked: contact developer", event:true}); }catch(e){} });
   $("juiceCopy").addEventListener("click",async()=>{ try{ await navigator.clipboard.writeText(parts.join("")); $("juiceCopy").textContent="Copied ✓"; }catch(e){ $("juiceCopy").textContent="Copy failed: long-press the number"; } });
 })();
 
