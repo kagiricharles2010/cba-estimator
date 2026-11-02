@@ -88,6 +88,11 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .ln span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
 .ln.t{border-top:1px solid var(--ink);margin-top:4px;padding-top:6px;font-weight:700}
 .ln.m{color:var(--muted)}
+.ha-row{display:grid;grid-template-columns:1fr;gap:8px}
+.ha-row.two{grid-template-columns:1fr 1fr}
+.ha-cap{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+.autoval small{display:block;font-size:11.5px;font-weight:400;color:var(--muted)}
+.autoval.promo{border-style:solid;border-color:#9cc5b0;background:var(--green-soft);color:var(--green);font-weight:600}
 .autoval{padding:8px 10px;border:1px dashed #c9cfcb;border-radius:6px;background:#f7f8f7;font-size:15px;font-variant-numeric:tabular-nums}
 .ln.sub{font-size:12.5px;padding:0 0 4px 12px}
 .bar{display:flex;height:24px;border-radius:4px;overflow:hidden;margin:10px 0 8px;background:#eef1ef}
@@ -186,7 +191,10 @@ footer p{margin:0 0 10px}
     <input type="text" inputmode="numeric" id="cc" value="12,000" placeholder="e.g. 12,000" autocomplete="off">
     <p class="hint">Leave blank if 18,000 or more.</p>
     <label>House (KES/month)</label>
-    <div class="autoval" id="haShow"></div>
+    <div class="ha-row">
+      <div><span class="ha-cap">June 2025</span><div class="autoval" id="haShow"></div></div>
+      <div id="haPromoWrap" hidden><span class="ha-cap">After promotion</span><div class="autoval promo" id="haShow2"></div></div>
+    </div>
     <p class="hint">Set automatically from your grade (standard rates), and follows any promotion. Not changed by the agreement.</p>
 
     <h3>Deductions</h3>
@@ -326,7 +334,7 @@ function compute(){
   };
   // input is the June 2025 notch (2024/25 baseline). A July increment moves it down one notch in July 2025.
   o.n0 = Math.min(12, o.nJun + (o.im===6 ? 1 : 0));
-  $("haShow").textContent = `KES ${HOUSE[o.g0].toLocaleString("en-KE")} (${o.g0} rate)`;
+  $("haShow").textContent = `KES ${HOUSE[o.g0].toLocaleString("en-KE")} (${o.g0})`;
   const errs=[];
   [[1,"p1"],[2,"p2"]].forEach(([k,p])=>{
     if(!$(p+"on").checked) return;
@@ -335,6 +343,10 @@ function compute(){
     o.promos.push({m, g:$(p+"g").value, n:+$(p+"n").value, k});
   });
   o.promos.sort((a,b)=>a.m-b.m);
+  // second house box: the rate after each promotion, from the month it takes effect
+  { const ps=o.promos.filter(p=>HOUSE[p.g]);
+    $("haPromoWrap").hidden = !ps.length; document.querySelector(".ha-row").classList.toggle("two", ps.length>0);
+    $("haShow2").innerHTML = ps.map(p=>`KES ${HOUSE[p.g].toLocaleString("en-KE")} (${p.g})<small>from ${mLabel(p.m)}</small>`).join(""); }
   let exitM = 47;
   if($("lvon").checked){ const m=idxFromMonthInput($("lvd").value); if(m===null||m<0||m>47) errs.push("Leaving: pick a month between Jul 2025 and Jun 2029."); else exitM=m; }
   let prevRank = RANK[o.g0];
