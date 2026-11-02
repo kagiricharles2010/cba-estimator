@@ -86,7 +86,7 @@
         .sec5-total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 8px; border-top: 2px solid var(--text); font-weight: bold; font-size: 0.95rem; }
         
         /* Developer Action Button Styling (Currently Hidden) */
-        .dev-action-container { margin-top: 15px; text-align: center; display: none; }
+        .dev-action-container { margin-top: 15px; text-align: center; display: block; }
         .dev-btn { background-color: #2d6a4f; color: white; border: none; border-radius: 6px; padding: 12px 20px; font-size: 0.9rem; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .dev-btn:hover { background-color: #1b4332; }
         .dev-info-box { display: none; margin-top: 10px; background: #e9f5ed; border: 1px solid #b7e4c7; color: #1b4332; padding: 10px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
@@ -289,9 +289,9 @@
 
             <!-- Developer Action Button (Currently Switched Off via display: none) -->
             <div class="dev-action-container">
-                <button class="dev-btn" onclick="toggleDevInfo()">💬 Ask a Question on WhatsApp or Buy the Developer a Juice</button>
+                <button class="dev-btn" onclick="toggleDevInfo()">💬 Ask a Question?</button>
                 <div id="devInfoBox" class="dev-info-box">
-                    WhatsApp/Pochi (+254721643535)
+                    WhatsApp/Safaricom (+254721643535)
                 </div>
             </div>
         </div>
