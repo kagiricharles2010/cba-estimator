@@ -85,6 +85,12 @@
         .sec5-cum { font-size: 0.75rem; color: var(--text-muted); }
         .sec5-total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 8px; border-top: 2px solid var(--text); font-weight: bold; font-size: 0.95rem; }
         
+        /* Developer Action Button Styling (Currently Hidden) */
+        .dev-action-container { margin-top: 15px; text-align: center; display: none; }
+        .dev-btn { background-color: #2d6a4f; color: white; border: none; border-radius: 6px; padding: 12px 20px; font-size: 0.9rem; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .dev-btn:hover { background-color: #1b4332; }
+        .dev-info-box { display: none; margin-top: 10px; background: #e9f5ed; border: 1px solid #b7e4c7; color: #1b4332; padding: 10px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
+
         .disclaimer { font-size: 0.75rem; color: var(--text-muted); margin-top: 20px; border-top: 1px solid var(--border); padding-top: 10px; }
     </style>
 </head>
@@ -280,6 +286,14 @@
                 <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Extra pay you get only because of the new CBA, compared with staying on 2024/25 rates with the same increments and promotions. Gross, before tax.</p>
                 <div id="section5Container"></div>
             </div>
+
+            <!-- Developer Action Button (Currently Switched Off via display: none) -->
+            <div class="dev-action-container">
+                <button class="dev-btn" onclick="toggleDevInfo()">💬 Ask a Question on WhatsApp or Buy the Developer a Juice</button>
+                <div id="devInfoBox" class="dev-info-box">
+                    WhatsApp/Mpesa (+254721643535)
+                </div>
+            </div>
         </div>
     </div>
 
@@ -312,6 +326,11 @@
 
     function formatCurrency(amount) {
         return "KES " + Math.round(amount).toLocaleString();
+    }
+
+    function toggleDevInfo() {
+        const box = document.getElementById("devInfoBox");
+        box.style.display = (box.style.display === "block") ? "none" : "block";
     }
 
     function updateNotches() {
@@ -413,8 +432,8 @@
         }
     }
 
-    function calculateTax(gross) {
-        let taxable = gross;
+    function calculateTax(taxableIncome) {
+        let taxable = taxableIncome;
         let tax = 0;
         if (taxable <= 24000) tax = taxable * 0.10;
         else if (taxable <= 32333) tax = 2400 + (taxable - 24000) * 0.25;
@@ -594,17 +613,21 @@
         </table>`;
         document.getElementById("salaryTableContainer").innerHTML = html;
 
-        // Expanded Take Home Breakdown Table
+        // Expanded Take Home Breakdown Table (Deducting Pension, SHIF, and Housing Levy pre-tax)
         let oldGross = base2024 + house + commuter;
-        let payeOld = calculateTax(oldGross);
-        let payeNew = calculateTax(activeGross);
-        let shifOld = oldGross * 0.0275;
-        let shifNew = activeGross * 0.0275;
-        let hlOld = oldGross * 0.015;
-        let hlNew = activeGross * 0.015;
-        let nssf = deductNssf ? 2160 : 0;
         let pensionOld = base2024 * pensionRate;
+        let shifOld = oldGross * 0.0275;
+        let hlOld = oldGross * 0.015;
+        let taxableOld = Math.max(0, oldGross - pensionOld - shifOld - hlOld);
+        let payeOld = calculateTax(taxableOld);
+
         let pensionNew = activeBasic * pensionRate;
+        let shifNew = activeGross * 0.0275;
+        let hlNew = activeGross * 0.015;
+        let taxableNew = Math.max(0, activeGross - pensionNew - shifNew - hlNew);
+        let payeNew = calculateTax(taxableNew);
+
+        let nssf = deductNssf ? 2160 : 0;
         let unionOld = base2024 * 0.02;
         let unionNew = activeBasic * 0.02;
 
@@ -637,7 +660,7 @@
 </script>
 
 <!-- GoatCounter Analytics -->
-<script data-goatcounter="https://kagiricharles.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script data-goatcounter="https://cba.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 
 </body>
 </html>
