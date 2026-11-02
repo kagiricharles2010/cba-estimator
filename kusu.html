@@ -432,13 +432,33 @@
         }
     }
 
+    // PAYE (monthly bands, unchanged by the Finance Act 2026): 10% to 24,000; 25% to 32,333; 30% to 500,000; 32.5% to 800,000; 35% above. Relief KES 2,400.
     function calculateTax(taxableIncome) {
-        let taxable = taxableIncome;
-        let tax = 0;
-        if (taxable <= 24000) tax = taxable * 0.10;
-        else if (taxable <= 32333) tax = 2400 + (taxable - 24000) * 0.25;
-        else tax = 2400 + 2083.25 + (taxable - 32333) * 0.30;
+        const bands = [[24000, 0.10], [8333, 0.25], [467667, 0.30], [300000, 0.325], [Infinity, 0.35]];
+        let rest = Math.max(0, taxableIncome), tax = 0;
+        for (const [width, rate] of bands) { const x = Math.min(rest, width); tax += x * rate; rest -= x; if (rest <= 0) break; }
         return Math.max(0, tax - 2400);
+    }
+
+    // NSSF Year 4 (from Feb 2026), 6% employee share:
+    // Tier I on the first KES 9,000 (max 540) + Tier II on pay from 9,000 to 108,000 (max 5,940). Total max 6,480.
+    function nssfTiers(pay) {
+        const t1 = 0.06 * Math.min(pay, 9000);
+        const t2 = 0.06 * Math.max(0, Math.min(pay, 108000) - 9000);
+        return { t1, t2, total: t1 + t2 };
+    }
+
+    // All statutory deductions for one month. Pension, NSSF, SHIF and Housing Levy come off before PAYE;
+    // tax relief for pension + NSSF is capped at KES 30,000 a month. Union dues are 2% of basic.
+    function deductions(gross, basic, pensionRate, withNssf) {
+        const n = withNssf ? nssfTiers(gross) : { t1: 0, t2: 0, total: 0 };
+        const pension = basic * pensionRate;
+        const pensionRelief = Math.min(pension, Math.max(0, 30000 - n.total));
+        const shif = gross * 0.0275, hl = gross * 0.015;
+        const taxable = Math.max(0, gross - n.total - pensionRelief - shif - hl);
+        const paye = calculateTax(taxable);
+        const union = basic * 0.02;
+        return { nssf: n, pension, shif, hl, taxable, paye, union, net: gross - n.total - pension - shif - hl - paye - union };
     }
 
     function getActiveGrade() {
@@ -456,9 +476,14 @@
         let curY = 2025;
         let curM = 6; // June 2025 baseline start
 
-        for (let i = 0; i < 48; i++) {
+        for (let i = 0; i < 49; i++) {   // June 2025 baseline + Jul 2025 ... Jun 2029
             let ymStr = `${curY}-${String(curM).padStart(2, '0')}`;
-            
+
+            // annual increment first (none in the June 2025 baseline month); a promotion in the same month then sets the notch
+            if (i > 0 && curM === incMonth) {
+                if (currentNotch < 11) currentNotch++;
+            }
+
             if (document.getElementById("promo1Toggle").checked) {
                 let p1m = document.getElementById("promo1Month").value;
                 if (ymStr === p1m) {
@@ -474,10 +499,6 @@
                 }
             }
 
-            if (i > 0 && curM === incMonth) {
-                if (currentNotch < 11) currentNotch++;
-            }
-
             let colIdx = 0;
             if (curY === 2025 && curM >= 7 || curY === 2026 && curM < 7) colIdx = 1;
             else if (curY === 2026 && curM >= 7 || curY === 2027 && curM < 7) colIdx = 2;
@@ -486,11 +507,11 @@
 
             let basicPay = kusuSalaries[currentGrade][currentNotch][colIdx];
             
-            // Ceiling logic: If notch reaches bar (index 11 / notch 12), baseline locks to Notch 12 base
-            let baselineNotchIdx = (currentNotch >= 11) ? 11 : startNotch;
-            let baselineBasic = kusuSalaries[startGrade][baselineNotchIdx][0];
+            // Old-terms comparison: what you'd be paid this month on the 2024/25 table at the SAME grade and notch
+            // (increments and promotions happen either way, so arrears = only what the new CBA adds).
+            let baselineBasic = kusuSalaries[currentGrade][currentNotch][0];
 
-            salaries.push({year: curY, month: curM, basic: basicPay, baseline: baselineBasic, grade: currentGrade, notch: currentNotch});
+            salaries.push({year: curY, month: curM, basic: basicPay, baseline: baselineBasic, grade: currentGrade, notch: currentNotch, house: houseAllowances[currentGrade]});
 
             curM++;
             if (curM > 12) {
@@ -502,7 +523,8 @@
     }
 
     function calculate() {
-        if (window.goatcounter && window.goatcounter.count) {
+        if (!window.__kusuUsed && window.goatcounter && window.goatcounter.count) {
+            window.__kusuUsed = true;
             window.goatcounter.count({
                 path: 'kusu-calculator-used',
                 title: 'KUSU Calculator Used',
@@ -514,9 +536,8 @@
         const startNotchIdx = parseInt(document.getElementById("notchSelect").value || 0);
         const incMonth = parseInt(document.getElementById("incrementMonth").value);
         
-        const activeGrade = getActiveGrade();
-        const house = houseAllowances[activeGrade];
-        document.getElementById("houseDisplay").value = `${formatCurrency(house)} (Grade ${activeGrade})`;
+        const activeGrade = getActiveGrade();   // grade after the latest promotion entered (for the display box)
+        document.getElementById("houseDisplay").value = `${formatCurrency(houseAllowances[activeGrade])} (Grade ${activeGrade})`;
 
         const commuter = parseFloat(document.getElementById("commuterInput").value) || 0;
         const pensionRate = (parseFloat(document.getElementById("pensionInput").value) || 0) / 100;
@@ -538,10 +559,12 @@
         else if (startYear >= 2028) activeColIdx = 4;
 
         let activeBasic = targetTimelineItem ? targetTimelineItem.basic : kusuSalaries[activeGrade][startNotchIdx][activeColIdx];
+        const startGradeNow = targetTimelineItem ? targetTimelineItem.grade : activeGrade;   // grade held when new salaries start
+        const house = houseAllowances[startGradeNow];
         let activeGross = activeBasic + house + commuter;
 
         // 1. Headline Card 1
-        document.getElementById("hlCard1Title").innerText = `${monthNames[startMonthIdx]} ${startYear} basic pay · Grade ${activeGrade} · notch ${targetTimelineItem ? targetTimelineItem.notch + 1 : startNotchIdx + 1}`;
+        document.getElementById("hlCard1Title").innerText = `${monthNames[startMonthIdx]} ${startYear} basic pay · Grade ${startGradeNow} · notch ${targetTimelineItem ? targetTimelineItem.notch + 1 : startNotchIdx + 1}`;
         document.getElementById("hlCard1Basic").innerText = formatCurrency(activeBasic);
         document.getElementById("hlCard1Footer").innerText = `Plus commuter ${commuter.toLocaleString()} + house ${house.toLocaleString()} = gross ${formatCurrency(activeGross)}`;
 
@@ -558,17 +581,18 @@
         let totalArr2627 = 0;
         for (let i = 13; i < timeline.length; i++) {
             let tItem = timeline[i];
-            if (tItem.year < startYear || (tItem.year === startYear && tItem.month <= (startMonthIdx + 1))) {
+            if (tItem.year < startYear || (tItem.year === startYear && tItem.month < (startMonthIdx + 1))) {   // before the start month only
                 totalArr2627 += (tItem.basic - tItem.baseline);
             }
         }
         let precedingMonthName = monthNames[(startMonthIdx - 1 + 12) % 12];
-        document.getElementById("hlCard3Title").innerText = `Arrears Jul – ${precedingMonthName.substring(0, 3)} ${startYear} (gross)`;
+        let precedingYear = startMonthIdx === 0 ? startYear - 1 : startYear;
+        document.getElementById("hlCard3Title").innerText = `Arrears Jul – ${precedingMonthName.substring(0, 3)} ${precedingYear} (gross)`;
         document.getElementById("hlCard3Gross").innerText = formatCurrency(totalArr2627);
 
         // Section 5: Cumulative Gain
         let fyGains = [0, 0, 0, 0];
-        let fyNotches = [timeline[12], timeline[24], timeline[36], timeline[47]];
+        let fyNotches = [timeline[1], timeline[13], timeline[25], timeline[37]];   // July of each financial year
 
         for (let i = 1; i <= 48 && i < timeline.length; i++) {
             let fyIdx = Math.floor((i - 1) / 12);
@@ -624,49 +648,39 @@
 
         let html = `<table>
             <tr><th>Period / Rate</th><th>Basic</th><th>Allowances</th><th>Gross</th></tr>
-            <tr><td>Old Terms (June 2025)</td><td>${formatCurrency(base2024)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(base2024 + house + commuter)}</td></tr>
-            <tr><td>From Jul 2025</td><td>${formatCurrency(tJul25.basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(tJul25.basic + house + commuter)}</td></tr>
-            <tr><td>From Jul 2026</td><td>${formatCurrency(tJul26.basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(tJul26.basic + house + commuter)}</td></tr>
-            <tr><td>From Jul 2027</td><td>${formatCurrency(tJul27.basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(tJul27.basic + house + commuter)}</td></tr>
-            <tr><td>From Jul 2028</td><td>${formatCurrency(tJul28.basic)}</td><td>${formatCurrency(house + commuter)}</td><td>${formatCurrency(tJul28.basic + house + commuter)}</td></tr>
+            <tr><td>Old Terms (June 2025)</td><td>${formatCurrency(base2024)}</td><td>${formatCurrency(houseAllowances[startGrade] + commuter)}</td><td>${formatCurrency(base2024 + houseAllowances[startGrade] + commuter)}</td></tr>
+            ${[["From Jul 2025", tJul25], ["From Jul 2026", tJul26], ["From Jul 2027", tJul27], ["From Jul 2028", tJul28]].map(([lbl, t]) =>
+                `<tr><td>${lbl}</td><td>${formatCurrency(t.basic)}</td><td>${formatCurrency(t.house + commuter)}</td><td>${formatCurrency(t.basic + t.house + commuter)}</td></tr>`).join("")}
         </table>`;
         document.getElementById("salaryTableContainer").innerHTML = html;
 
-        // Take Home Breakdown Table (Pre-tax Deductions & Basic-pay Union Dues)
-        let oldGross = base2024 + house + commuter;
-        let pensionOld = base2024 * pensionRate;
-        let shifOld = oldGross * 0.0275;
-        let hlOld = oldGross * 0.015;
-        let taxableOld = Math.max(0, oldGross - pensionOld - shifOld - hlOld);
-        let payeOld = calculateTax(taxableOld);
-
-        let pensionNew = activeBasic * pensionRate;
-        let shifNew = activeGross * 0.0275;
-        let hlNew = activeGross * 0.015;
-        let taxableNew = Math.max(0, activeGross - pensionNew - shifNew - hlNew);
-        let payeNew = calculateTax(taxableNew);
-
-        let nssf = deductNssf ? 2160 : 0;
-        let unionOld = base2024 * 0.02;
-        let unionNew = activeBasic * 0.02;
-
-        let netOld = oldGross - payeOld - shifOld - hlOld - nssf - pensionOld - unionOld;
-        let netNew = activeGross - payeNew - shifNew - hlNew - nssf - pensionNew - unionNew;
-
+        // Take Home Breakdown Table: June 2025 (old terms) vs the month new salaries start
+        const houseOld = houseAllowances[startGrade];
+        const oldGross = base2024 + houseOld + commuter;
+        const dOld = deductions(oldGross, base2024, pensionRate, deductNssf);
+        const dNew = deductions(activeGross, activeBasic, pensionRate, deductNssf);
+        const newLbl = `${monthNames[startMonthIdx].substring(0, 3)} ${startYear} (New)`;
+        const row = (label, a, b, cls) => {
+            const ch = b - a, sign = ch > 0 ? "+" : ch < 0 ? "-" : "";
+            const fmtDed = v => (v < 0 ? "-" : "") + formatCurrency(Math.abs(v));
+            return `<tr${cls ? ` class="${cls}"` : ""}><td>${label}</td><td>${fmtDed(a)}</td><td>${fmtDed(b)}</td><td>${sign}${formatCurrency(Math.abs(ch))}</td></tr>`;
+        };
         let compHtml = `<table>
-            <tr><th>Component</th><th>June 2025 (Old)</th><th>${monthNames[startMonthIdx].substring(0, 3)} ${startYear} (New)</th><th>Change</th></tr>
-            <tr><td>Basic Pay</td><td>${formatCurrency(base2024)}</td><td>${formatCurrency(activeBasic)}</td><td>+${formatCurrency(activeBasic - base2024)}</td></tr>
-            <tr><td>House Allowance</td><td>${formatCurrency(house)}</td><td>${formatCurrency(house)}</td><td>KES 0</td></tr>
-            <tr><td>Commuter Allowance</td><td>${formatCurrency(commuter)}</td><td>${formatCurrency(commuter)}</td><td>KES 0</td></tr>
-            <tr class="highlight-row"><td>Gross Pay</td><td>${formatCurrency(oldGross)}</td><td>${formatCurrency(activeGross)}</td><td>+${formatCurrency(activeGross - oldGross)}</td></tr>
-            <tr><td>PAYE (Estimated)</td><td>-${formatCurrency(payeOld)}</td><td>-${formatCurrency(payeNew)}</td><td>-${formatCurrency(payeNew - payeOld)}</td></tr>
-            <tr><td>SHIF (2.75%)</td><td>-${formatCurrency(shifOld)}</td><td>-${formatCurrency(shifNew)}</td><td>-${formatCurrency(shifNew - shifOld)}</td></tr>
-            <tr><td>Housing Levy (1.5%)</td><td>-${formatCurrency(hlOld)}</td><td>-${formatCurrency(hlNew)}</td><td>-${formatCurrency(hlNew - hlOld)}</td></tr>
-            <tr><td>NSSF</td><td>-${formatCurrency(nssf)}</td><td>-${formatCurrency(nssf)}</td><td>KES 0</td></tr>
-            <tr><td>Pension (${(pensionRate*100).toFixed(1)}%)</td><td>-${formatCurrency(pensionOld)}</td><td>-${formatCurrency(pensionNew)}</td><td>-${formatCurrency(pensionNew - pensionOld)}</td></tr>
-            <tr><td>Union Dues (2%)</td><td>-${formatCurrency(unionOld)}</td><td>-${formatCurrency(unionNew)}</td><td>-${formatCurrency(unionNew - unionOld)}</td></tr>
-            <tr class="highlight-row"><td>Est. Take-Home</td><td>${formatCurrency(netOld)}</td><td>${formatCurrency(netNew)}</td><td>+${formatCurrency(netNew - netOld)}</td></tr>
-        </table>`;
+            <tr><th>Component</th><th>June 2025 (Old)</th><th>${newLbl}</th><th>Change</th></tr>
+            ${row("Basic Pay", base2024, activeBasic)}
+            ${row("House Allowance", houseOld, house)}
+            ${row("Commuter Allowance", commuter, commuter)}
+            ${row("Gross Pay", oldGross, activeGross, "highlight-row")}
+            ${row(`Pension (${(pensionRate*100).toFixed(1)}% of basic)`, -dOld.pension, -dNew.pension)}
+            ${deductNssf ? row("NSSF Tier I (6% of first 9,000)", -dOld.nssf.t1, -dNew.nssf.t1) + row("NSSF Tier II (6% of 9,000–108,000)", -dOld.nssf.t2, -dNew.nssf.t2) : ""}
+            ${row("SHIF (2.75%)", -dOld.shif, -dNew.shif)}
+            ${row("Housing Levy (1.5%)", -dOld.hl, -dNew.hl)}
+            ${row("Taxable Pay (after the above)", dOld.taxable, dNew.taxable)}
+            ${row("PAYE", -dOld.paye, -dNew.paye)}
+            ${row("Union Dues (2% of basic)", -dOld.union, -dNew.union)}
+            ${row("Est. Take-Home", dOld.net, dNew.net, "highlight-row")}
+        </table>
+        <p class="help-text" style="margin-top:8px">Pension, NSSF, SHIF and Housing Levy are deducted before PAYE (pension + NSSF relief capped at KES 30,000). SACCO and loans excluded.</p>`;
         document.getElementById("takeHomeComparisonContainer").innerHTML = compHtml;
     }
 
