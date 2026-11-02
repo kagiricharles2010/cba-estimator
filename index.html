@@ -61,6 +61,7 @@ th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertic
 th{font-size:12px;color:var(--muted);font-weight:600}
 td.n,th.n{text-align:right;white-space:nowrap}
 tr.hl td{background:var(--green-soft);font-weight:600}
+tr.sub td{color:var(--muted);font-style:italic;background:#fafbfa}
 tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .scroll{overflow-x:auto}
 @media (max-width:620px){
@@ -87,6 +88,7 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .ln span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
 .ln.t{border-top:1px solid var(--ink);margin-top:4px;padding-top:6px;font-weight:700}
 .ln.m{color:var(--muted)}
+.autoval{padding:8px 10px;border:1px dashed #c9cfcb;border-radius:6px;background:#f7f8f7;font-size:15px;font-variant-numeric:tabular-nums}
 .ln.sub{font-size:12.5px;padding:0 0 4px 12px}
 .bar{display:flex;height:24px;border-radius:4px;overflow:hidden;margin:10px 0 8px;background:#eef1ef}
 .bar div{height:100%}
@@ -180,11 +182,11 @@ footer p{margin:0 0 10px}
 
     <h3>Allowances now</h3>
     <label for="cc">Commuter (KES/month)</label>
-    <input type="text" inputmode="numeric" id="cc" placeholder="e.g. 12,000" autocomplete="off">
+    <input type="text" inputmode="numeric" id="cc" value="12,000" placeholder="e.g. 12,000" autocomplete="off">
     <p class="hint">Leave blank if 18,000 or more.</p>
-    <label for="ha">House (KES/month)</label>
-    <input type="text" inputmode="numeric" id="ha" placeholder="e.g. 50,000" autocomplete="off">
-    <p class="hint">Not changed by the agreement. Used for net pay only.</p>
+    <label>House (KES/month)</label>
+    <div class="autoval" id="haShow"></div>
+    <p class="hint">Set automatically from your grade (standard rates), and follows any promotion. Not changed by the agreement.</p>
 
     <h3>Deductions</h3>
     <label for="penr">Pension (% of basic)</label>
@@ -219,7 +221,7 @@ footer p{margin:0 0 10px}
   <div class="card">
     <h2>Scope and disclaimer</h2>
     <p><b>Demo, not certified.</b> This tool is unofficial and has not been checked or endorsed by UASU, IPUCCF, FKE, the Ministry of Education, KRA or any university. The figures are estimates, not pay advice. Your payroll office and UASU chapter have the final word.</p>
-    <p><b>Included:</b> basic salary (Schedule I); commuter and professorial allowances (Schedule II); arrears from Jul 2025 until new salaries start; PAYE, SHIF, Housing Levy, NSSF and pension; union dues at 2% of basic and of arrears.</p>
+    <p><b>Included:</b> basic salary (Schedule I); commuter and professorial allowances (Schedule II); arrears from Jul 2025 until new salaries start; PAYE, SHIF, Housing Levy, NSSF and pension; union dues at 2% of basic, including the basic part of arrears. Pension, NSSF, SHIF and Housing Levy are deducted before PAYE.</p>
     <p><b>Not included:</b></p>
     <ul>
       <li>Leave and Book &amp; ICT allowances.</li>
@@ -232,7 +234,7 @@ footer p{margin:0 0 10px}
     </ul>
     <p><b>Assumed:</b></p>
     <ul>
-      <li>House allowance doesn't change.</li>
+      <li>House allowance is the standard rate for your grade and isn't changed by the agreement.</li>
       <li>Increments continue each year in the month you choose.</li>
       <li>Promotions start at the grade and notch you enter.</li>
       <li>Arrears are taxed in the month they're paid.</li>
@@ -257,6 +259,7 @@ const RANK = {"10A":0,"11A":1,"12A":2,"13A":3,"14A":4,"15A":5};
 const LEAVE = {"15A":21980,"14A":21197,"13A":19021,"12A":17570,"11A":14087,"10A":8754};
 const BOOK  = {"15A":18500,"14A":17500,"13A":15000,"12A":14000,"11A":12000,"10A":10000};
 const PROF  = {"15A":7500,"14A":6000};
+const HOUSE = {"15A":73715,"14A":66344,"13A":58972,"12A":55286,"11A":51601,"10A":35383}; // standard house allowance by grade
 const COMMUTER = 18000;
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const FY = ["2025/26","2026/27","2027/28","2028/29"];
@@ -309,19 +312,20 @@ function deductions(gross, basic, o){
   const paye = payeOn(taxable);
   const union = basic*0.02;
   const netPre = gross - nssf - pen - shif - ahl - paye;
-  return {nssf, pen, shif, ahl, paye, union, netPre, net: netPre - union};
+  return {nssf, pen, penDed, shif, ahl, taxable, paye, union, netPre, net: netPre - union};
 }
 
 // ---- main model ----
 function compute(){
   const o = {
     g0:$("g0").value, nJun:+$("n0").value, im:+$("im").value, sm:+$("ns").value,
-    promos:[], cc:numOrNull("cc"), ha:numOrNull("ha")||0,
+    promos:[], cc:numOrNull("cc"),
     cp:numOrNull("cp"),
     cph:$("cph").value, nssf:$("nssf").checked, penr:Math.min(30,(numOrNull("penr")??0))/100
   };
   // input is the June 2025 notch (2024/25 baseline). A July increment moves it down one notch in July 2025.
   o.n0 = Math.min(12, o.nJun + (o.im===6 ? 1 : 0));
+  $("haShow").textContent = `KES ${HOUSE[o.g0].toLocaleString("en-KE")} (${o.g0} rate)`;
   const errs=[];
   [[1,"p1"],[2,"p2"]].forEach(([k,p])=>{
     if(!$(p+"on").checked) return;
@@ -354,8 +358,8 @@ function compute(){
     o.promos.filter(p=>p.m===m).forEach(p=>{ g=p.g; n=p.n; });
     const fy=Math.floor(m/12);
     const oldB=T[g][n-1][0], newB=T[g][n-1][fy+1];
-    const oldA = curC + o.ha + oldProf(g);
-    const newA = newC(m) + o.ha + (PROF[g]||0);
+    const oldA = curC + HOUSE[g] + oldProf(g);
+    const newA = newC(m) + HOUSE[g] + (PROF[g]||0);
     const on = m<=exitM;
     rows.push({m, fy, g, n, on, oldB, newB, oldA, newA, oldG:oldB+oldA, newG:newB+newA, diff: on ? (newB+newA)-(oldB+oldA) : 0});
   }
@@ -372,7 +376,7 @@ function compute(){
   const sumB = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+(r.on?r.newB-r.oldB:0),0);
   // arrears taxed on top of the first new-terms salary; pension on the basic part; 2% union fee on all arrears
   const withArr = (arr, arrB, bG=pay.newG, bB=pay.newB) => { arr=Math.max(0,arr); arrB=Math.max(0,Math.min(arrB,arr));
-    const d0=deductions(bG,bB,o), d1=deductions(bG+arr,bB+arrB,o); const union=arr*0.02;
+    const d0=deductions(bG,bB,o), d1=deductions(bG+arr,bB+arrB,o); const union=arrB*0.02; // union dues on basic only
     return {gross:arr, paye:d1.paye-d0.paye, shif:d1.shif-d0.shif, ahl:d1.ahl-d0.ahl, nssf:d1.nssf-d0.nssf, pen:d1.pen-d0.pen, union, net:(d1.netPre-d0.netPre)-union}; };
   const instNet = withArr(instal, sumB(0,12)/3);
   const lumpNet = withArr(arrJulDec26, sumB(12,o.sm));
@@ -390,7 +394,7 @@ function allowText(R, r, isNew){
   const o=R.o, parts=[];
   const c = isNew ? R.newC(r.m) : R.curC;
   if(c) parts.push(`Commuter ${fmtN(c)}`);
-  parts.push(o.ha ? `House ${fmtN(o.ha)}` : `House (not entered)`);
+  parts.push(`House ${fmtN(HOUSE[r.g])}`);
   const pr = isNew ? (PROF[r.g]||0) : (PROF[r.g] ? (o.cp===null ? PROF[r.g] : o.cp) : 0);
   if(pr) parts.push(`Professorial ${fmtN(pr)}`);
   return parts.join(" + ");
@@ -415,7 +419,7 @@ function render(R){
 
   let h = "";
   h += `<div class="kpis">
-    <div class="kpi hl"><div class="k">${SL} basic pay · ${label(jan)}</div><div class="v">${fmt(jan.newB)}</div><div class="s">Plus ${allowText(R, jan, true).toLowerCase()} = gross ${fmt(jan.newG)}${o.ha?"":" (excluding house allowance)"}</div></div>
+    <div class="kpi hl"><div class="k">${SL} basic pay · ${label(jan)}</div><div class="v">${fmt(jan.newB)}</div><div class="s">Plus ${allowText(R, jan, true).toLowerCase()} = gross ${fmt(jan.newG)}</div></div>
     <div class="kpi"><div class="k">Arrears Jul 2025 – Jun 2026 (gross)</div><div class="v">${fmt(R.arr2526)}</div><div class="s">3 instalments of ~${fmt(R.instal)}</div></div>
     <div class="kpi"><div class="k">Arrears ${A2} (gross)</div><div class="v">${fmt(R.arrJulDec26)}</div><div class="s">Paid with the January 2027 salary</div></div>
   </div>`;
@@ -440,11 +444,11 @@ function render(R){
       ${line("Total, Jul 2025 – Jun 2026", fmt(R.arr2526))}
       ${subline(`Basic ${fmtN(R.arrB2526)} + allowances ${fmtN(R.arr2526-R.arrB2526)}`)}
       ${line("<b>Each instalment</b>", "<b>"+fmt(R.instal)+"</b>")}
-      ${line("PAYE", "−"+fmt(a.paye),"m")}
-      ${line("SHIF + Housing Levy", "−"+fmt(a.shif+a.ahl),"m")}
-      ${a.nssf>0.5?line("NSSF", "−"+fmt(a.nssf),"m"):""}
       ${a.pen>0.5?line("Pension", "−"+fmt(a.pen),"m"):""}
-      ${line("Union fee (2%)", "−"+fmt(a.union),"m")}
+      ${a.nssf>0.5?line("NSSF", "−"+fmt(a.nssf),"m"):""}
+      ${line("SHIF + Housing Levy", "−"+fmt(a.shif+a.ahl),"m")}
+      ${line("PAYE (after the above)", "−"+fmt(a.paye),"m")}
+      ${line("Union dues (2% of basic)", "−"+fmt(a.union),"m")}
       ${line("Take-home per instalment", fmt(a.net),"t")}
       <p class="note">Payment dates not yet set.</p>
     </div>
@@ -464,9 +468,9 @@ function render(R){
 
   // 3 + 4. net pay comparisons
   const netTable = (num, title, col, gB, dB, extra) => `<section class="card"><h2><span class="sec-num">${num}</span>${title}</h2>
-  <p class="lead">After PAYE, SHIF, Housing Levy${o.nssf?", NSSF":""}${o.penr?`, pension (${(o.penr*100).toFixed(1)}%)`:""} and union dues (2%).</p>
+  <p class="lead">${o.penr?`Pension (${(o.penr*100).toFixed(1)}%), `:""}${o.nssf?"NSSF, ":""}SHIF and Housing Levy come off before tax. PAYE is charged on what's left, then union dues at 2% of basic.</p>
   <div class="scroll"><table><thead><tr><th>KES / month</th><th class="n">Oct 2026</th><th class="n">${col}</th><th class="n">Change</th></tr></thead><tbody>
-  ${[["Gross pay",now.oldG,gB],["PAYE",-dNow.paye,-dB.paye],["SHIF",-dNow.shif,-dB.shif],["Housing Levy",-dNow.ahl,-dB.ahl]].concat(o.nssf?[["NSSF",-dNow.nssf,-dB.nssf]]:[]).concat(o.penr?[["Pension",-dNow.pen,-dB.pen]]:[]).concat([["Union dues (2%)",-dNow.union,-dB.union]]).map(([k,x,y])=>`<tr><td>${k}</td><td class="n">${fmtN(x)}</td><td class="n">${fmtN(y)}</td><td class="n">${fmtS(y-x)}</td></tr>`).join("")}
+  ${[["Gross pay",now.oldG,gB]].concat(o.penr?[["Pension",-dNow.pen,-dB.pen]]:[]).concat(o.nssf?[["NSSF",-dNow.nssf,-dB.nssf]]:[]).concat([["SHIF",-dNow.shif,-dB.shif],["Housing Levy",-dNow.ahl,-dB.ahl],["Taxable pay",dNow.taxable,dB.taxable,"sub"],["PAYE",-dNow.paye,-dB.paye],["Union dues (2% of basic)",-dNow.union,-dB.union]]).map(([k,x,y,c])=>`<tr class="${c||""}"><td>${k}</td><td class="n">${fmtN(x)}</td><td class="n">${fmtN(y)}</td><td class="n">${fmtS(y-x)}</td></tr>`).join("")}
   <tr class="tot"><td>Est. take-home</td><td class="n">${fmtN(dNow.net)}</td><td class="n">${fmtN(dB.net)}</td><td class="n pos">${fmtS(dB.net-dNow.net)}</td></tr>
   </tbody></table></div>
   <p class="note">SACCO and loans excluded.${extra||""}</p></section>`;
@@ -506,7 +510,7 @@ function assumBox(R){
       : `${fmt(o.cc)} → ${fmt(R.newC(0))} (2025/26), ${fmt(R.newC(12))} (2026/27), KES 18,000 from 2027/28.`;
     assum.push(`Commuter phase-in timing isn't specified in the RTWF. Assumed: ${t}`);
   }
-  if(!o.ha) assum.push("No house allowance entered.");
+  assum.push(`House allowance at the standard ${R.o.g0} rate (${fmt(HOUSE[R.o.g0])}), following any promotion.`);
   assum.push("Leave and Book &amp; ICT allowances excluded.");
   return `<div class="assume"><b>Assumptions</b><ul>${assum.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
 }
@@ -538,11 +542,11 @@ function renderLeaver(R, label){
     ${ae>=12?line(`Jul 2026 – ${mLabel(ae)}`, fmt(a2)):""}
     ${line("<b>Total arrears</b>", "<b>"+fmt(tot)+"</b>")}
     ${subline(`Basic ${fmtN(R.arrBLeave)} + allowances ${fmtN(tot-R.arrBLeave)}`)}
-    ${line("PAYE", "−"+fmt(L.paye),"m")}
-    ${line("SHIF + Housing Levy", "−"+fmt(L.shif+L.ahl),"m")}
-    ${L.nssf>0.5?line("NSSF", "−"+fmt(L.nssf),"m"):""}
     ${L.pen>0.5?line("Pension", "−"+fmt(L.pen),"m"):""}
-    ${line("Union fee (2%)", "−"+fmt(L.union),"m")}
+    ${L.nssf>0.5?line("NSSF", "−"+fmt(L.nssf),"m"):""}
+    ${line("SHIF + Housing Levy", "−"+fmt(L.shif+L.ahl),"m")}
+    ${line("PAYE (after the above)", "−"+fmt(L.paye),"m")}
+    ${line("Union dues (2% of basic)", "−"+fmt(L.union),"m")}
     ${line("Estimated take-home", fmt(L.net),"t")}
     <p class="note">Assumed paid as one sum and taxed alongside your last salary. The agreement doesn't say how or when leavers are paid.</p>
   </div></section>`;
