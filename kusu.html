@@ -225,9 +225,19 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="commuterInput">Commuter Allowance (KES/month)</label>
+                    <label for="commuterInput">Current Commuter Allowance (KES/month)</label>
                     <input type="number" id="commuterInput" value="12000" oninput="calculate();">
-                    <div class="help-text">Default KES 12,000 (Harmonized RTWF rate is up to KES 18,000).</div>
+                    <div class="help-text">Your commuter allowance now. The RTWF rate is KES 18,000 for Grades 5–15.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="commuterPhase">Commuter Increase to KES 18,000</label>
+                    <select id="commuterPhase" onchange="calculate();">
+                        <option value="phased" selected>Phased over 3 years from Jul 2025</option>
+                        <option value="phased_impl">Phased over 3 years from new salaries start (no commuter arrears)</option>
+                        <option value="full">Full KES 18,000 from Jul 2025</option>
+                    </select>
+                    <div class="help-text">The RTWF says universities paying less "shall pay progressively within three (3) years" but doesn't set the timing.</div>
                 </div>
 
                 <div class="form-group">
@@ -299,6 +309,7 @@
 
     <div class="disclaimer">
         <strong>Scope and disclaimer:</strong> Unofficial demo based on KUSU Return to Work Formula schedules signed on 30 October 2026. Union dues are fixed at 2%.
+        Leave allowance (Schedule II) is not included. The commuter phase-in timing isn't specified in the RTWF, so the option you choose is applied; arrears include the commuter increase.
     </div>
 </div>
 
@@ -549,6 +560,20 @@
         const startMonthIdx = parseInt(parts[1]) - 1;
 
         const timeline = getSalaryTimeline(startGrade, startNotchIdx, incMonth);
+        const startIdx = timeline.findIndex(t => t.year === startYear && t.month === (startMonthIdx + 1));   // month new salaries start
+
+        // Commuter on new terms in timeline month i. Old terms keep the current amount.
+        const commuterPhase = document.getElementById("commuterPhase").value;
+        const newCommuter = i => {
+            if (i < 1 || commuter >= 18000) return commuter;            // June 2025 baseline, or already at/above the RTWF rate
+            if (commuterPhase === "full") return 18000;
+            if (commuterPhase === "phased_impl") {
+                if (i < startIdx) return commuter;
+                return commuter + (18000 - commuter) * Math.min(Math.floor((i - startIdx) / 12) + 1, 3) / 3;
+            }
+            return commuter + (18000 - commuter) * Math.min(Math.floor((i - 1) / 12) + 1, 3) / 3;   // a third of the gap each July from 2025
+        };
+        const monthGain = i => (timeline[i].basic - timeline[i].baseline) + (newCommuter(i) - commuter);   // what the new CBA adds in month i
 
         let targetTimelineItem = timeline.find(t => t.year === startYear && t.month === (startMonthIdx + 1));
         
@@ -561,17 +586,18 @@
         let activeBasic = targetTimelineItem ? targetTimelineItem.basic : kusuSalaries[activeGrade][startNotchIdx][activeColIdx];
         const startGradeNow = targetTimelineItem ? targetTimelineItem.grade : activeGrade;   // grade held when new salaries start
         const house = houseAllowances[startGradeNow];
-        let activeGross = activeBasic + house + commuter;
+        const commuterNew = newCommuter(startIdx);
+        let activeGross = activeBasic + house + commuterNew;
 
         // 1. Headline Card 1
         document.getElementById("hlCard1Title").innerText = `${monthNames[startMonthIdx]} ${startYear} basic pay · Grade ${startGradeNow} · notch ${targetTimelineItem ? targetTimelineItem.notch + 1 : startNotchIdx + 1}`;
         document.getElementById("hlCard1Basic").innerText = formatCurrency(activeBasic);
-        document.getElementById("hlCard1Footer").innerText = `Plus commuter ${commuter.toLocaleString()} + house ${house.toLocaleString()} = gross ${formatCurrency(activeGross)}`;
+        document.getElementById("hlCard1Footer").innerText = `Plus commuter ${Math.round(commuterNew).toLocaleString()} + house ${house.toLocaleString()} = gross ${formatCurrency(activeGross)}`;
 
         // 2. Headline Card 2 (2025/26 Arrears)
         let totalArr2526 = 0;
         for (let i = 1; i <= 12; i++) {
-            totalArr2526 += (timeline[i].basic - timeline[i].baseline);
+            totalArr2526 += monthGain(i);
         }
         let instalment = totalArr2526 / 3;
         document.getElementById("hlCard2Gross").innerText = formatCurrency(totalArr2526);
@@ -582,7 +608,7 @@
         for (let i = 13; i < timeline.length; i++) {
             let tItem = timeline[i];
             if (tItem.year < startYear || (tItem.year === startYear && tItem.month < (startMonthIdx + 1))) {   // before the start month only
-                totalArr2627 += (tItem.basic - tItem.baseline);
+                totalArr2627 += monthGain(i);
             }
         }
         let precedingMonthName = monthNames[(startMonthIdx - 1 + 12) % 12];
@@ -597,7 +623,7 @@
         for (let i = 1; i <= 48 && i < timeline.length; i++) {
             let fyIdx = Math.floor((i - 1) / 12);
             if (fyIdx < 4) {
-                fyGains[fyIdx] += (timeline[i].basic - timeline[i].baseline);
+                fyGains[fyIdx] += monthGain(i);
             }
         }
 
@@ -649,8 +675,8 @@
         let html = `<table>
             <tr><th>Period / Rate</th><th>Basic</th><th>Allowances</th><th>Gross</th></tr>
             <tr><td>Old Terms (June 2025)</td><td>${formatCurrency(base2024)}</td><td>${formatCurrency(houseAllowances[startGrade] + commuter)}</td><td>${formatCurrency(base2024 + houseAllowances[startGrade] + commuter)}</td></tr>
-            ${[["From Jul 2025", tJul25], ["From Jul 2026", tJul26], ["From Jul 2027", tJul27], ["From Jul 2028", tJul28]].map(([lbl, t]) =>
-                `<tr><td>${lbl}</td><td>${formatCurrency(t.basic)}</td><td>${formatCurrency(t.house + commuter)}</td><td>${formatCurrency(t.basic + t.house + commuter)}</td></tr>`).join("")}
+            ${[["From Jul 2025", tJul25, 1], ["From Jul 2026", tJul26, 13], ["From Jul 2027", tJul27, 25], ["From Jul 2028", tJul28, 37]].map(([lbl, t, i]) =>
+                `<tr><td>${lbl}</td><td>${formatCurrency(t.basic)}</td><td>${formatCurrency(t.house + newCommuter(i))}</td><td>${formatCurrency(t.basic + t.house + newCommuter(i))}</td></tr>`).join("")}
         </table>`;
         document.getElementById("salaryTableContainer").innerHTML = html;
 
@@ -669,7 +695,7 @@
             <tr><th>Component</th><th>June 2025 (Old)</th><th>${newLbl}</th><th>Change</th></tr>
             ${row("Basic Pay", base2024, activeBasic)}
             ${row("House Allowance", houseOld, house)}
-            ${row("Commuter Allowance", commuter, commuter)}
+            ${row("Commuter Allowance", commuter, commuterNew)}
             ${row("Gross Pay", oldGross, activeGross, "highlight-row")}
             ${row(`Pension (${(pensionRate*100).toFixed(1)}% of basic)`, -dOld.pension, -dNew.pension)}
             ${deductNssf ? row("NSSF Tier I (6% of first 9,000)", -dOld.nssf.t1, -dNew.nssf.t1) + row("NSSF Tier II (6% of 9,000–108,000)", -dOld.nssf.t2, -dNew.nssf.t2) : ""}
