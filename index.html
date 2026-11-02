@@ -136,11 +136,11 @@ footer p{margin:0 0 10px}
   <h2 class="panel-head">Your details</h2>
   <section class="card inputs" aria-label="Your details">
     <h3 class="first">Starting point</h3>
-    <label for="g0">Grade on July 2025 payslip</label>
+    <label for="g0">Grade on June 2025 payslip</label>
     <select id="g0"></select>
-    <label for="n0">Notch on July 2025 payslip</label>
+    <label for="n0">Notch on June 2025 payslip</label>
     <select id="n0"></select>
-    <p class="hint">Amounts are 2024/25 basic pay. Match yours to your payslip.</p>
+    <p class="hint">The 2024/25 baseline column in the salary tables. Match the amount to your June 2025 payslip.</p>
     <label for="im">Increment month</label>
     <select id="im"></select>
     <label for="ns">New salaries start</label>
@@ -278,7 +278,7 @@ const numOrNull = id => { const v=$(id).value.replace(/[^0-9.]/g,""); if(v==="")
 function fillGrades(sel, def){ sel.innerHTML = GRADES.map(([g,t])=>`<option value="${g}">${g} – ${t}</option>`).join(""); sel.value=def; }
 function fillNotches(sel, g, def){ const keep = def ?? sel.value; sel.innerHTML = Array.from({length:12},(_,i)=>`<option value="${i+1}">Notch ${i+1} · KES ${T[g][i][0].toLocaleString("en-KE")}</option>`).join(""); sel.value=keep; }
 const PAIRS = [["g0","n0"],["p1g","p1n"],["p2g","p2n"]];
-fillGrades($("g0"),"12A"); fillNotches($("n0"),"12A","5");
+fillGrades($("g0"),"12A"); fillNotches($("n0"),"12A","4");
 fillGrades($("p1g"),"13A"); fillNotches($("p1n"),"13A","1");
 fillGrades($("p2g"),"14A"); fillNotches($("p2n"),"14A","1");
 PAIRS.forEach(([gs,ns])=>$(gs).addEventListener("change",()=>fillNotches($(ns),$(gs).value)));
@@ -312,11 +312,13 @@ function deductions(gross, basic, o){
 // ---- main model ----
 function compute(){
   const o = {
-    g0:$("g0").value, n0:+$("n0").value, im:+$("im").value, sm:+$("ns").value,
+    g0:$("g0").value, nJun:+$("n0").value, im:+$("im").value, sm:+$("ns").value,
     promos:[], cc:numOrNull("cc"), ha:numOrNull("ha")||0,
     cp:numOrNull("cp"),
     cph:$("cph").value, nssf:$("nssf").checked, penr:Math.min(30,(numOrNull("penr")??0))/100
   };
+  // input is the June 2025 notch (2024/25 baseline). A July increment moves it down one notch in July 2025.
+  o.n0 = Math.min(12, o.nJun + (o.im===6 ? 1 : 0));
   const errs=[];
   [[1,"p1"],[2,"p2"]].forEach(([k,p])=>{
     if(!$(p+"on").checked) return;
