@@ -109,6 +109,28 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .gb-v small{display:block;white-space:nowrap;font-weight:400;font-size:12px;color:var(--muted)}
 .gb-tot{display:flex;justify-content:space-between;border-top:2px solid var(--ink);margin-top:14px;padding-top:8px;font-weight:700}
 @media (max-width:620px){.gb{grid-template-columns:1fr auto;row-gap:4px}.gb-t{grid-column:1 / -1;grid-row:2}.gb-l{flex-direction:row;gap:8px;align-items:baseline}}
+.pdf-box{margin:0 auto 18px;max-width:420px}
+.pdf-btn{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:15px;font-weight:600;background:#fff;color:var(--green);border:1.5px solid var(--green);border-radius:999px;padding:9px 20px;cursor:pointer}
+.pdf-btn:hover{background:var(--green-soft)}
+.pdf-note{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.4}
+.print-summary{display:none}
+@media print{
+  @page{margin:12mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{background:#fff;font-size:10.5pt}
+  .notice,.col-l,.juice,header .sub+.sub{display:none !important}
+  header{padding:0 0 6px}
+  .wrap{display:block;padding:0;max-width:none}
+  .print-summary{display:block;border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:0 0 14px;font-size:10pt}
+  .print-summary h3{margin:0 0 6px;padding:0;border:0;font-size:11pt}
+  .print-summary dl{display:grid;grid-template-columns:max-content 1fr;gap:2px 14px;margin:0}
+  .print-summary dt{color:var(--muted)} .print-summary dd{margin:0;font-weight:600}
+  .kpi,.box,.assume,.gb,tr,.ln,h2{break-inside:avoid}
+  h2{break-after:avoid}
+  .card{box-shadow:none}
+  .kpis{grid-template-columns:repeat(3,1fr)}
+  footer{padding:0}
+}
 .juice{text-align:center;margin:26px auto 0;max-width:420px}
 .juice-q{margin:0 0 8px;color:var(--muted);font-size:14px}
 .juice-btn{font:inherit;font-size:15px;font-weight:600;background:var(--green);color:#fff;border:0;border-radius:999px;padding:10px 20px;cursor:pointer}
@@ -222,6 +244,7 @@ footer p{margin:0 0 10px}
 
   <div class="col-r">
   <h2 class="panel-head">Your projections</h2>
+  <div id="printSummary" class="print-summary"></div>
   <main class="outputs" id="out" aria-live="polite"></main>
   </div>
 </div>
@@ -252,6 +275,10 @@ footer p{margin:0 0 10px}
     <p><b>Source:</b> Return to Work Formula, IPUCCF (FKE) and UASU, 30 Oct 2026. Schedules I and II. <b>Where your copy differs, your copy is right.</b></p>
   </div>
   <div class="juice">
+    <div class="pdf-box">
+      <button type="button" class="pdf-btn" id="pdfBtn"><svg class="pdf-ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6"/><path d="M9.5 14.5 12 17l2.5-2.5"/></svg><span>Download PDF</span></button>
+      <p class="pdf-note">Opens your print window: choose <b>Save as PDF</b>. On a shared computer, delete the PDF from Downloads when you're done.</p>
+    </div>
     <button type="button" class="juice-btn" id="juiceBtn">Questions and Compliments to Developer</button>
     <div class="juice-rev" id="juiceRev" hidden>
       <span class="juice-num" id="juiceNum"></span>
@@ -569,6 +596,22 @@ function renderLeaver(R, label){
 
 function syncPromo(){ ["p1","p2","lv"].forEach(p=>{ $(p+"f").style.display = $(p+"on").checked ? "" : "none"; }); }
 document.querySelectorAll("select,input").forEach(el=>{ el.addEventListener("input",()=>{ syncPromo(); compute(); }); el.addEventListener("change",()=>{ syncPromo(); compute(); }); });
+
+// PDF: fill a summary of the inputs (shown only when printing), then open the print window ("Save as PDF").
+function fillPrintSummary(){
+  const t = id => { const el=$(id); return el.tagName==="SELECT" ? el.options[el.selectedIndex].text : el.value; };
+  const rows = [
+    ["Grade (June 2025)", t("g0")], ["Notch (June 2025)", t("n0")], ["Increment month", t("im")], ["New salaries start", t("ns")],
+  ];
+  [["p1","First promotion"],["p2","Second promotion"]].forEach(([p,l])=>{ if($(p+"on").checked) rows.push([l, `${t(p+"g")}, ${t(p+"n")}, from ${mLabel(idxFromMonthInput($(p+"d").value))}`]); });
+  if($("lvon").checked) rows.push(["Last month worked", mLabel(idxFromMonthInput($("lvd").value))]);
+  rows.push(["Commuter now", `KES ${t("cc")} (${t("cph")})`], ["House allowance", $("haShow").textContent + ($("haPromoWrap").hidden ? "" : "; after promotion " + $("haShow2").innerText.replace(/\n/g," "))],
+            ["Pension", `${t("penr")}% of basic`], ["NSSF", $("nssf").checked ? "Deducted" : "Not deducted"]);
+  const today = new Date().toLocaleDateString("en-KE",{day:"numeric",month:"long",year:"numeric"});
+  $("printSummary").innerHTML = `<h3>Your details (estimate printed ${today})</h3><dl>${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
+}
+window.addEventListener("beforeprint", fillPrintSummary);
+$("pdfBtn").addEventListener("click", ()=>{ fillPrintSummary(); try{ window.print(); }catch(e){} });
 
 // donate button: number assembled at runtime so it isn't plain text in the page
 (()=>{ const parts=["0721","643","535"];

@@ -86,6 +86,26 @@
         .sec5-total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 8px; border-top: 2px solid var(--text); font-weight: bold; font-size: 0.95rem; }
         
         /* Developer Action Button Styling (Currently Hidden) */
+        .pdf-box { margin-top: 15px; text-align: center; }
+        .pdf-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #fff; color: #2d6a4f; border: 1.5px solid #2d6a4f; border-radius: 6px; padding: 11px 20px; font-size: 0.9rem; font-weight: bold; cursor: pointer; }
+        .pdf-btn:hover { background: #e9f5ed; }
+        .pdf-note { font-size: 0.75rem; color: var(--text-muted); margin: 6px 0 0; line-height: 1.4; }
+        .print-summary { display: none; }
+        @media print {
+            @page { margin: 12mm; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { background: #fff; }
+            .container { box-shadow: none; padding: 0; max-width: none; }
+            .layout { display: block; }
+            .layout > div:first-child, .pdf-box, .dev-action-container { display: none !important; }
+            .print-summary { display: block; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin: 0 0 12px; font-size: 0.85rem; }
+            .print-summary h3 { margin: 0 0 6px; font-size: 0.95rem; }
+            .print-summary dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; margin: 0; }
+            .print-summary dt { color: var(--text-muted); } .print-summary dd { margin: 0; font-weight: 600; }
+            .headline-card, tr, .sec5-item, h2 { break-inside: avoid; }
+            h2 { break-after: avoid; }
+            .headline-grid { grid-template-columns: repeat(3, 1fr); }
+        }
         .dev-action-container { margin-top: 15px; text-align: center; display: block; }
         .dev-btn { background-color: #2d6a4f; color: white; border: none; border-radius: 6px; padding: 12px 20px; font-size: 0.9rem; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .dev-btn:hover { background-color: #1b4332; }
@@ -255,6 +275,7 @@
         <!-- RIGHT COLUMN: HEADLINE CARDS & TABLES -->
         <div>
             <div class="column-header projections-header">Your Projections</div>
+            <div id="printSummary" class="print-summary"></div>
 
             <!-- Headline Summary Cards Row -->
             <div class="headline-grid">
@@ -298,6 +319,11 @@
             </div>
 
             <!-- Developer Action Button (Currently Switched Off via display: none) -->
+            <div class="pdf-box">
+                <button type="button" class="pdf-btn" id="pdfBtn" onclick="downloadPdf()"><svg class="pdf-ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6"/><path d="M9.5 14.5 12 17l2.5-2.5"/></svg><span>Download PDF</span></button>
+                <p class="pdf-note">Opens your print window: choose <b>Save as PDF</b>. On a shared computer, delete the PDF from Downloads when you're done.</p>
+            </div>
+
             <div class="dev-action-container">
                 <button class="dev-btn" onclick="toggleDevInfo()">💬 Ask a Question/Complement</button>
                 <div id="devInfoBox" class="dev-info-box">
@@ -709,6 +735,19 @@
         <p class="help-text" style="margin-top:8px">Pension, NSSF, SHIF and Housing Levy are deducted before PAYE (pension + NSSF relief capped at KES 30,000). SACCO and loans excluded.</p>`;
         document.getElementById("takeHomeComparisonContainer").innerHTML = compHtml;
     }
+
+    // PDF: fill a summary of the inputs (shown only when printing), then open the print window ("Save as PDF").
+    function fillPrintSummary() {
+        const t = id => { const el = document.getElementById(id); return el.tagName === "SELECT" ? el.options[el.selectedIndex].text : el.value; };
+        const rows = [["Grade (June 2025)", t("gradeSelect")], ["Notch (June 2025)", t("notchSelect")], ["Increment month", t("incrementMonth")], ["New salaries start", t("startMonth")]];
+        [1, 2].forEach(n => { if (document.getElementById(`promo${n}Toggle`).checked) rows.push([n === 1 ? "First promotion" : "Second promotion", `${t(`promo${n}Grade`)}, ${t(`promo${n}Notch`)}, from ${t(`promo${n}Month`)}`]); });
+        rows.push(["House allowance", t("houseDisplay")], ["Commuter now", `KES ${Number(t("commuterInput")).toLocaleString()} (${t("commuterPhase")})`],
+                  ["Pension", `${t("pensionInput")}% of basic`], ["NSSF", document.getElementById("deductNssf").checked ? "Deducted (tiered)" : "Not deducted"]);
+        const today = new Date().toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" });
+        document.getElementById("printSummary").innerHTML = `<h3>Your details (estimate printed ${today})</h3><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
+    }
+    window.addEventListener("beforeprint", fillPrintSummary);
+    function downloadPdf() { fillPrintSummary(); try { window.print(); } catch (e) {} }
 
     // Privacy (shared/public computers): nothing is stored, and browsers that refill forms from memory
     // on refresh, back/forward or tab restore are overridden. Defaults come from the page itself.
