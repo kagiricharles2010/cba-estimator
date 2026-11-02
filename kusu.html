@@ -114,7 +114,7 @@
                 
                 <div class="form-group">
                     <label for="gradeSelect">Grade on June 2025 Payslip</label>
-                    <select id="gradeSelect" onchange="updateNotches(); onBaseGradeChange(); calculate();">
+                    <select autocomplete="off" id="gradeSelect" onchange="updateNotches(); onBaseGradeChange(); calculate();">
                         <option value="15">Grade 15</option>
                         <option value="14">Grade 14</option>
                         <option value="13">Grade 13</option>
@@ -131,13 +131,13 @@
 
                 <div class="form-group">
                     <label for="notchSelect">Notch on June 2025 Payslip</label>
-                    <select id="notchSelect" onchange="calculate();"></select>
+                    <select autocomplete="off" id="notchSelect" onchange="calculate();"></select>
                     <div class="help-text">Shows 2024/25 basic pay scale notches with basic salaries in brackets.</div>
                 </div>
 
                 <div class="form-group">
                     <label for="incrementMonth">Increment Month</label>
-                    <select id="incrementMonth" onchange="calculate();">
+                    <select autocomplete="off" id="incrementMonth" onchange="calculate();">
                         <option value="7" selected>July</option>
                         <option value="8">August</option>
                         <option value="9">September</option>
@@ -156,7 +156,7 @@
 
                 <div class="form-group">
                     <label for="startMonth">New Salaries Implementation Start</label>
-                    <select id="startMonth" onchange="calculate();">
+                    <select autocomplete="off" id="startMonth" onchange="calculate();">
                         <option value="2026-11">November 2026</option>
                         <option value="2026-12" selected>December 2026</option>
                         <option value="2027-01">January 2027</option>
@@ -168,48 +168,48 @@
                     <label style="font-weight:700; margin-bottom:6px;">Did you get a promotion within the CBA period (from June 2025)?</label>
                     
                     <div class="checkbox-group">
-                        <input type="checkbox" id="promo1Toggle" onchange="togglePromo1(); calculate();">
+                        <input autocomplete="off" type="checkbox" id="promo1Toggle" onchange="togglePromo1(); calculate();">
                         <label for="promo1Toggle" style="display:inline; font-weight:normal;">First promotion</label>
                     </div>
                     <div id="promo1Box" class="sub-box" style="display:none;">
                         <div class="form-group">
                             <label>Effective Month</label>
-                            <select id="promo1Month" onchange="calculate();">
+                            <select autocomplete="off" id="promo1Month" onchange="calculate();">
                                 <option value="2025-07">July 2025</option><option value="2025-08">August 2025</option><option value="2025-09">September 2025</option><option value="2025-10">October 2025</option><option value="2025-11">November 2025</option><option value="2025-12">December 2025</option><option value="2026-01">January 2026</option><option value="2026-02">February 2026</option><option value="2026-03">March 2026</option><option value="2026-04">April 2026</option><option value="2026-05">May 2026</option><option value="2026-06">June 2026</option><option value="2026-07" selected>July 2026</option><option value="2026-08">August 2026</option><option value="2026-09">September 2026</option><option value="2026-10">October 2026</option><option value="2026-11">November 2026</option><option value="2026-12">December 2026</option><option value="2027-01">January 2027</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>New Grade</label>
-                            <select id="promo1Grade" onchange="updatePromoNotches(1); calculate();">
+                            <select autocomplete="off" id="promo1Grade" onchange="updatePromoNotches(1); calculate();">
                                 <option value="15">Grade 15</option><option value="14">Grade 14</option><option value="13">Grade 13</option><option value="12">Grade 12</option><option value="11">Grade 11</option><option value="10">Grade 10</option><option value="9" selected>Grade 9</option><option value="8">Grade 8</option><option value="7">Grade 7</option><option value="6">Grade 6</option><option value="5">Grade 5</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>New Notch</label>
-                            <select id="promo1Notch" onchange="calculate();"></select>
+                            <select autocomplete="off" id="promo1Notch" onchange="calculate();"></select>
                         </div>
                     </div>
 
                     <div class="checkbox-group" style="margin-top: 10px;">
-                        <input type="checkbox" id="promo2Toggle" onchange="togglePromo2(); calculate();">
+                        <input autocomplete="off" type="checkbox" id="promo2Toggle" onchange="togglePromo2(); calculate();">
                         <label for="promo2Toggle" style="display:inline; font-weight:normal;">Second promotion</label>
                     </div>
                     <div id="promo2Box" class="sub-box" style="display:none;">
                         <div class="form-group">
                             <label>Effective Month</label>
-                            <select id="promo2Month" onchange="calculate();">
+                            <select autocomplete="off" id="promo2Month" onchange="calculate();">
                                 <option value="2026-07" selected>July 2026</option><option value="2026-08">August 2026</option><option value="2026-09">September 2026</option><option value="2026-10">October 2026</option><option value="2026-11">November 2026</option><option value="2026-12">December 2026</option><option value="2027-01">January 2027</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>New Grade</label>
-                            <select id="promo2Grade" onchange="updatePromoNotches(2); calculate();">
+                            <select autocomplete="off" id="promo2Grade" onchange="updatePromoNotches(2); calculate();">
                                 <option value="15">Grade 15</option><option value="14">Grade 14</option><option value="13">Grade 13</option><option value="12">Grade 12</option><option value="11">Grade 11</option><option value="10" selected>Grade 10</option><option value="9">Grade 9</option><option value="8">Grade 8</option><option value="7">Grade 7</option><option value="6">Grade 6</option><option value="5">Grade 5</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>New Notch</label>
-                            <select id="promo2Notch" onchange="calculate();"></select>
+                            <select autocomplete="off" id="promo2Notch" onchange="calculate();"></select>
                         </div>
                     </div>
                 </div>
@@ -220,19 +220,19 @@
                 
                 <div class="form-group">
                     <label>House Allowance (Auto-selected based on active/promoted Grade)</label>
-                    <input type="text" id="houseDisplay" readonly style="background:#e9ecef; font-weight:bold;">
+                    <input autocomplete="off" type="text" id="houseDisplay" readonly style="background:#e9ecef; font-weight:bold;">
                     <div class="help-text">Automatically updates to match the grade of your latest promotion.</div>
                 </div>
 
                 <div class="form-group">
                     <label for="commuterInput">Current Commuter Allowance (KES/month)</label>
-                    <input type="number" id="commuterInput" value="12000" oninput="calculate();">
+                    <input autocomplete="off" type="number" id="commuterInput" value="12000" oninput="calculate();">
                     <div class="help-text">Your commuter allowance now. The RTWF rate is KES 18,000 for Grades 5–15.</div>
                 </div>
 
                 <div class="form-group">
                     <label for="commuterPhase">Commuter Increase to KES 18,000</label>
-                    <select id="commuterPhase" onchange="calculate();">
+                    <select autocomplete="off" id="commuterPhase" onchange="calculate();">
                         <option value="phased" selected>Phased over 3 years from Jul 2025</option>
                         <option value="phased_impl">Phased over 3 years from new salaries start (no commuter arrears)</option>
                         <option value="full">Full KES 18,000 from Jul 2025</option>
@@ -242,11 +242,11 @@
 
                 <div class="form-group">
                     <label for="pensionInput">Pension (% of basic)</label>
-                    <input type="number" id="pensionInput" value="7.5" step="0.5" oninput="calculate();">
+                    <input autocomplete="off" type="number" id="pensionInput" value="7.5" step="0.5" oninput="calculate();">
                 </div>
 
                 <div class="checkbox-group">
-                    <input type="checkbox" id="deductNssf" checked onchange="calculate();">
+                    <input autocomplete="off" type="checkbox" id="deductNssf" checked onchange="calculate();">
                     <label for="deductNssf" style="display:inline; font-weight:normal;">Deduct NSSF Tiered Contributions</label>
                 </div>
             </div>
@@ -308,7 +308,7 @@
     </div>
 
     <div class="disclaimer">
-        <strong>Scope and disclaimer:</strong> Unofficial demo based on KUSU Return to Work Formula schedules signed on 30 October 2026. Union dues are fixed at 2%.
+        <strong>Scope and disclaimer:</strong> Unofficial demo based on KUSU Return to Work Formula schedules signed on 30 October 2026. Union dues are fixed at 2%. Nothing you enter is stored or sent, and the form clears when you refresh or leave the page.
         Leave allowance (Schedule II) is not included. The commuter phase-in timing isn't specified in the RTWF, so the option you choose is applied; arrears include the commuter increase.
     </div>
 </div>
@@ -710,11 +710,29 @@
         document.getElementById("takeHomeComparisonContainer").innerHTML = compHtml;
     }
 
+    // Privacy (shared/public computers): nothing is stored, and browsers that refill forms from memory
+    // on refresh, back/forward or tab restore are overridden. Defaults come from the page itself.
+    function resetForm() {
+        document.querySelectorAll(".layout input, .layout select").forEach(el => {
+            if (el.type === "checkbox") el.checked = el.defaultChecked;
+            else if (el.tagName === "SELECT") { const o = [...el.options].find(o => o.defaultSelected) || el.options[0]; if (o) el.value = o.value; }
+            else el.value = el.defaultValue;
+        });
+        ["notchSelect", "promo1Notch", "promo2Notch"].forEach(id => document.getElementById(id).innerHTML = "");
+        document.getElementById("promo1Box").style.display = "none";
+        document.getElementById("promo2Box").style.display = "none";
+        const dev = document.getElementById("devInfoBox"); if (dev) dev.style.display = "none";
+        updateNotches();      // back to the default notch for the default grade
+        calculate();
+    }
+    window.addEventListener("pageshow", () => setTimeout(resetForm, 0));   // first load, refresh, back/forward
+    window.addEventListener("pagehide", resetForm);                        // clear before the page is cached or closed
+
     window.onload = function() {
         updateNotches();
         if (document.getElementById("promo1Toggle").checked) setSmartPromoDefaults(1);
         if (document.getElementById("promo2Toggle").checked) setSmartPromoDefaults(2);
-        calculate();
+        resetForm();
     };
 </script>
 

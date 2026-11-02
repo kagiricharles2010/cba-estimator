@@ -148,14 +148,14 @@ footer p{margin:0 0 10px}
   <section class="card inputs" aria-label="Your details">
     <h3 class="first">Starting point (June 2025)</h3>
     <label for="g0">Grade on June 2025 payslip</label>
-    <select id="g0"></select>
+    <select autocomplete="off" id="g0"></select>
     <label for="n0">Notch on June 2025 payslip</label>
-    <select id="n0"></select>
+    <select autocomplete="off" id="n0"></select>
     <p class="hint">The 2024/25 baseline column in the salary tables. Match the amount to your June 2025 payslip.</p>
     <label for="im">Increment month</label>
-    <select id="im"></select>
+    <select autocomplete="off" id="im"></select>
     <label for="ns">New salaries start</label>
-    <select id="ns">
+    <select autocomplete="off" id="ns">
       <option value="16" selected>November 2026</option>
       <option value="17">December 2026</option>
       <option value="18">January 2027</option>
@@ -163,26 +163,26 @@ footer p{margin:0 0 10px}
     <p class="hint">The agreement says on or before 31 Jan 2027. Check with your chapter.</p>
 
     <h3>Did you get a promotion within the CBA period (from July 2025)?</h3>
-    <label class="chk"><input type="checkbox" id="p1on"> First promotion</label>
+    <label class="chk"><input autocomplete="off" type="checkbox" id="p1on"> First promotion</label>
     <div id="p1f" class="sub-fields">
       <label for="p1d">Effective month</label>
-      <input type="month" placeholder="YYYY-MM" id="p1d" min="2025-07" max="2029-06" value="2026-07">
-      <label for="p1g">New grade</label><select id="p1g"></select>
-      <label for="p1n">New notch</label><select id="p1n"></select>
+      <input autocomplete="off" type="month" placeholder="YYYY-MM" id="p1d" min="2025-07" max="2029-06" value="2026-07">
+      <label for="p1g">New grade</label><select autocomplete="off" id="p1g"></select>
+      <label for="p1n">New notch</label><select autocomplete="off" id="p1n"></select>
     </div>
-    <label class="chk"><input type="checkbox" id="p2on"> Second promotion</label>
+    <label class="chk"><input autocomplete="off" type="checkbox" id="p2on"> Second promotion</label>
     <div id="p2f" class="sub-fields">
       <label for="p2d">Effective month</label>
-      <input type="month" placeholder="YYYY-MM" id="p2d" min="2025-07" max="2029-06" value="2028-07">
-      <label for="p2g">New grade</label><select id="p2g"></select>
-      <label for="p2n">New notch</label><select id="p2n"></select>
+      <input autocomplete="off" type="month" placeholder="YYYY-MM" id="p2d" min="2025-07" max="2029-06" value="2028-07">
+      <label for="p2g">New grade</label><select autocomplete="off" id="p2g"></select>
+      <label for="p2n">New notch</label><select autocomplete="off" id="p2n"></select>
     </div>
 
     <h3>Leaving the university</h3>
-    <label class="chk"><input type="checkbox" id="lvon"> I left, or will leave, during the CBA period</label>
+    <label class="chk"><input autocomplete="off" type="checkbox" id="lvon"> I left, or will leave, during the CBA period</label>
     <div id="lvf" class="sub-fields">
       <label for="lvd">Last month worked</label>
-      <input type="month" placeholder="YYYY-MM" id="lvd" min="2025-07" max="2029-06" value="2026-06">
+      <input autocomplete="off" type="month" placeholder="YYYY-MM" id="lvd" min="2025-07" max="2029-06" value="2026-06">
       <p class="hint">Retirement, resignation, end of contract or transfer.</p>
     </div>
 
@@ -207,16 +207,16 @@ footer p{margin:0 0 10px}
       <label for="cp">Professorial allowance now (KES/month)</label>
       <input type="text" inputmode="numeric" id="cp" placeholder="Blank = no change" autocomplete="off">
       <label for="cph">Commuter increase</label>
-      <select id="cph">
+      <select autocomplete="off" id="cph">
         <option value="phased" selected>Phased over 3 years from Jul 2025</option>
         <option value="phased_impl">Phased over 3 years from new salaries start (no commuter arrears)</option>
         <option value="full">Full 18,000 from Jul 2025</option>
       </select>
       <p class="hint">The RTWF says universities paying less "shall pay progressively within three years" but doesn't set the timing.</p>
-      <label class="chk"><input type="checkbox" id="nssf" checked> Deduct NSSF</label>
+      <label class="chk"><input autocomplete="off" type="checkbox" id="nssf" checked> Deduct NSSF</label>
     </div>
     <div class="err" id="err"></div>
-    <p class="hint" style="margin-top:14px">Nothing you enter is stored or sent.</p>
+    <p class="hint" style="margin-top:14px">Nothing you enter is stored or sent. The form clears when you refresh or leave the page.</p>
   </section>
   </div>
 
@@ -587,9 +587,27 @@ function markUsed(e){
 document.querySelectorAll("#g0,#n0,#im,select,input").forEach(el=>{ el.addEventListener("input",markUsed); el.addEventListener("change",markUsed); });
 // browsers (esp. mobile) refill the form from an earlier visit after scripts run, without firing input events.
 // Recalculate once the page has fully loaded and whenever it is shown again (back/forward, tab restore).
-function refreshAll(){ PAIRS.forEach(([gs,ns])=>fillNotches($(ns),$(gs).value)); syncPromo(); compute(); }
-window.addEventListener("load", ()=>setTimeout(refreshAll,0));
-window.addEventListener("pageshow", ()=>setTimeout(refreshAll,0));
+// Privacy (shared/public computers): nothing is ever stored, and browsers that refill forms
+// from memory on refresh, back/forward or tab restore are overridden. The form goes back to its
+// defaults whenever the page is shown again or left.
+// Defaults come from the page itself (never from what a browser may have refilled).
+const JS_DEFAULTS = {g0:"12A", n0:"4", im:"6", p1g:"13A", p1n:"1", p2g:"14A", p2n:"1"};
+const FIELDS = [...document.querySelectorAll("section.inputs select, section.inputs input")];
+const defaultOf = el => {
+  if(el.id in JS_DEFAULTS) return JS_DEFAULTS[el.id];
+  if(el.type==="checkbox") return el.defaultChecked;
+  if(el.tagName==="SELECT"){ const o=[...el.options].find(o=>o.defaultSelected) || el.options[0]; return o ? o.value : ""; }
+  return el.defaultValue;
+};
+function resetForm(){
+  FIELDS.forEach(el=>{ const d=defaultOf(el); if(el.type==="checkbox") el.checked=d; else el.value=d; delete el.dataset.touched; });
+  PAIRS.forEach(([gs,ns])=>{ if($(gs)) fillNotches($(ns),$(gs).value, JS_DEFAULTS[ns]); });
+  const jr=$("juiceRev"), jb=$("juiceBtn"); if(jr){ jr.hidden=true; jb.hidden=false; }
+  syncPromo(); compute();
+}
+window.addEventListener("pageshow", ()=>setTimeout(resetForm,0));   // fires on first load, refresh and back/forward
+window.addEventListener("load", ()=>setTimeout(resetForm,0));
+window.addEventListener("pagehide", resetForm);                     // clear before the page is cached or closed
 syncPromo(); compute();
 </script>
 <script data-goatcounter="https://kagiricharles.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
