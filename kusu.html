@@ -560,14 +560,7 @@
     }
 
     function calculate() {
-        if (!window.__kusuUsed && window.goatcounter && window.goatcounter.count) {
-            window.__kusuUsed = true;
-            window.goatcounter.count({
-                path: 'kusu-calculator-used',
-                title: 'KUSU Calculator Used',
-                event: true
-            });
-        }
+        // (usage is counted on the first real input by the user, not here: calculate() also runs on load and reset)
 
         const startGrade = parseInt(document.getElementById("gradeSelect").value);
         const startNotchIdx = parseInt(document.getElementById("notchSelect").value || 0);
@@ -749,6 +742,16 @@
     window.addEventListener("beforeprint", fillPrintSummary);
     function downloadPdf() { fillPrintSummary(); try { window.print(); } catch (e) {} }
 
+    // Anonymous usage count: one "kusu-calculator-used" event per visit, on the first real input by the user.
+    // No values are sent. (Loading, refreshing or clearing the page does not count as use.)
+    let kusuUsedSent = false;
+    function markKusuUsed(e) {
+        if (kusuUsedSent || !e.isTrusted) return;
+        const send = () => { if (window.goatcounter && window.goatcounter.count) { window.goatcounter.count({ path: "kusu-calculator-used", title: "KUSU Calculator Used", event: true }); kusuUsedSent = true; return true; } return false; };
+        if (!send()) { kusuUsedSent = true; let n = 0; const t = setInterval(() => { if (send() || ++n > 20) clearInterval(t); }, 500); }
+    }
+    document.querySelectorAll(".layout input, .layout select").forEach(el => { el.addEventListener("input", markKusuUsed); el.addEventListener("change", markKusuUsed); });
+
     // Privacy (shared/public computers): nothing is stored, and browsers that refill forms from memory
     // on refresh, back/forward or tab restore are overridden. Defaults come from the page itself.
     function resetForm() {
@@ -776,7 +779,7 @@
 </script>
 
 <!-- GoatCounter Analytics -->
-<script data-goatcounter="https://kagiricharles.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script data-goatcounter="https://kagiricharles.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 
 </body>
 </html>
