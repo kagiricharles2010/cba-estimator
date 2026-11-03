@@ -168,12 +168,18 @@ footer p{margin:0 0 10px}
   <div class="col-l">
   <h2 class="panel-head">Your details</h2>
   <section class="card inputs" aria-label="Your details">
-    <h3 class="first">Starting point (June 2025)</h3>
-    <label for="g0">Grade on June 2025 payslip</label>
+    <h3 class="first" id="spHead">Starting point (June 2025)</h3>
+    <label class="chk"><input autocomplete="off" type="checkbox" id="jnon"> I joined after June 2025</label>
+    <div id="jnf" class="sub-fields">
+      <label for="jnd">Month joined</label>
+      <input autocomplete="off" type="month" placeholder="YYYY-MM" id="jnd" min="2025-07" max="2029-06" value="2026-01">
+      <p class="hint">Then enter the grade and notch on your first payslip.</p>
+    </div>
+    <label for="g0" id="g0lbl">Grade on June 2025 payslip</label>
     <select autocomplete="off" id="g0"></select>
-    <label for="n0">Notch on June 2025 payslip</label>
+    <label for="n0" id="n0lbl">Notch on June 2025 payslip</label>
     <select autocomplete="off" id="n0"></select>
-    <p class="hint">The 2024/25 baseline column in the salary tables. Match the amount to your June 2025 payslip.</p>
+    <p class="hint" id="n0hint">The 2024/25 baseline column in the salary tables. Match the amount to your June 2025 payslip.</p>
     <label for="im">Increment month</label>
     <select autocomplete="off" id="im"></select>
     <label for="ns">New salaries start</label>
@@ -214,7 +220,7 @@ footer p{margin:0 0 10px}
     <p class="hint">Leave blank if 18,000 or more.</p>
     <label>House (KES/month)</label>
     <div class="ha-row">
-      <div><span class="ha-cap">June 2025</span><div class="autoval" id="haShow"></div></div>
+      <div><span class="ha-cap" id="haCap1">June 2025</span><div class="autoval" id="haShow"></div></div>
       <div id="haPromoWrap" hidden><span class="ha-cap">After promotion</span><div class="autoval promo" id="haShow2"></div></div>
     </div>
     <p class="hint">Set automatically from your grade (standard rates), and follows any promotion. Not changed by the agreement.</p>
@@ -316,12 +322,16 @@ const idxFromMonthInput = s => {
 const numOrNull = id => { const v=$(id).value.replace(/[^0-9.]/g,""); if(v==="") return null; const x=parseFloat(v); return Number.isFinite(x) ? Math.max(0,x) : null; };
 
 function fillGrades(sel, def){ sel.innerHTML = GRADES.map(([g,t])=>`<option value="${g}">${g} – ${t}</option>`).join(""); sel.value=def; }
-function fillNotches(sel, g, def){ const keep = def ?? sel.value; sel.innerHTML = Array.from({length:12},(_,i)=>`<option value="${i+1}">Notch ${i+1} · KES ${T[g][i][0].toLocaleString("en-KE")}</option>`).join(""); sel.value=keep; }
+function fillNotches(sel, g, def, col=0){ const keep = def ?? sel.value; sel.innerHTML = Array.from({length:12},(_,i)=>`<option value="${i+1}">Notch ${i+1} · KES ${T[g][i][col].toLocaleString("en-KE")}</option>`).join(""); sel.value=keep; }
+// Joiners: month index joined (0 = Jul 2025), or -1 if on staff in June 2025 / not ticked / invalid
+function joinIdx(){ if(!$("jnon").checked) return -1; const m=idxFromMonthInput($("jnd").value); return (m===null||m<0||m>47) ? -1 : m; }
+// the salary-table column a joiner's first payslip is on: 2024/25 rates until new salaries start, then that year's new rates
+function firstPayCol(){ const J=joinIdx(); return (J>=0 && J>=+$("ns").value) ? Math.floor(J/12)+1 : 0; }
 const PAIRS = [["g0","n0"],["p1g","p1n"],["p2g","p2n"]];
 fillGrades($("g0"),"12A"); fillNotches($("n0"),"12A","4");
 fillGrades($("p1g"),"13A"); fillNotches($("p1n"),"13A","1");
 fillGrades($("p2g"),"14A"); fillNotches($("p2n"),"14A","1");
-PAIRS.forEach(([gs,ns])=>$(gs).addEventListener("change",()=>fillNotches($(ns),$(gs).value)));
+PAIRS.forEach(([gs,ns])=>$(gs).addEventListener("change",()=>fillNotches($(ns),$(gs).value, undefined, gs==="g0" ? firstPayCol() : 0)));
 const ORDER = ["10A","11A","12A","13A","14A","15A"];
 [["p1on","p1g","p1n","g0"],["p2on","p2g","p2n","p1g"]].forEach(([on,gs,ns,from])=>$(on).addEventListener("change",()=>{
   if(!$(on).checked) return; const base = (from==="p1g" && !$("p1on").checked) ? $("g0").value : $(from).value;
@@ -357,14 +367,20 @@ function compute(){
     cp:numOrNull("cp"),
     cph:$("cph").value, nssf:$("nssf").checked, penr:Math.min(30,(numOrNull("penr")??0))/100
   };
-  // input is the June 2025 notch (2024/25 baseline). A July increment moves it down one notch in July 2025.
-  o.n0 = Math.min(12, o.nJun + (o.im===6 ? 1 : 0));
+  // Joiners (after June 2025) enter the month joined and the grade/notch on their FIRST payslip.
+  // Everyone else enters the June 2025 notch (2024/25 baseline); a July increment moves it down one notch in July 2025.
+  o.joiner = $("jnon").checked;
+  const J = o.joiner ? joinIdx() : 0;          // first month on staff within the CBA period (0 = Jul 2025)
+  o.J = J;
+  o.n0 = o.joiner ? o.nJun : Math.min(12, o.nJun + (o.im===6 ? 1 : 0));
   $("haShow").textContent = `KES ${HOUSE[o.g0].toLocaleString("en-KE")} (${o.g0})`;
   const errs=[];
+  if(o.joiner && J<0) errs.push("Joining: pick a month between Jul 2025 and Jun 2029.");
   [[1,"p1"],[2,"p2"]].forEach(([k,p])=>{
     if(!$(p+"on").checked) return;
     const m = idxFromMonthInput($(p+"d").value);
     if(m===null || m<0 || m>47){ errs.push(`Promotion ${k}: pick a month between Jul 2025 and Jun 2029.`); return; }
+    if(o.joiner && J>=0 && m<=J){ errs.push(`Promotion ${k}: the month should be after you joined.`); return; }
     o.promos.push({m, g:$(p+"g").value, n:+$(p+"n").value, k});
   });
   o.promos.sort((a,b)=>a.m-b.m);
@@ -373,10 +389,11 @@ function compute(){
     $("haPromoWrap").hidden = !ps.length; document.querySelector(".ha-row").classList.toggle("two", ps.length>0);
     $("haShow2").innerHTML = ps.map(p=>`KES ${HOUSE[p.g].toLocaleString("en-KE")} (${p.g})<small>from ${mLabel(p.m)}</small>`).join(""); }
   let exitM = 47;
-  if($("lvon").checked){ const m=idxFromMonthInput($("lvd").value); if(m===null||m<0||m>47) errs.push("Leaving: pick a month between Jul 2025 and Jun 2029."); else exitM=m; }
+  if($("lvon").checked){ const m=idxFromMonthInput($("lvd").value); if(m===null||m<0||m>47) errs.push("Leaving: pick a month between Jul 2025 and Jun 2029."); else if(m<Math.max(0,J)) errs.push("Leaving: the last month worked should be after the month you joined."); else exitM=m; }
   let prevRank = RANK[o.g0];
   o.promos.forEach(p=>{ if(RANK[p.g] <= prevRank) errs.push(`Promotion ${p.k}: the new grade should be higher than the previous one.`); prevRank = Math.max(prevRank, RANK[p.g]); });
   $("err").textContent = errs.join(" ");
+  if(o.joiner && J<0){ $("out").innerHTML = ""; return; }
 
   // commuter
   const curC = o.cc===null ? COMMUTER : o.cc;
@@ -389,16 +406,18 @@ function compute(){
   const oldProf = g => PROF[g] ? (o.cp===null ? PROF[g] : o.cp) : 0;
 
   // month-by-month path
+  // Before a joiner's first month nothing is counted. Increments happen each time the increment month comes round
+  // AFTER the first month (so someone who joins in their increment month gets the first increment a year later).
   const rows=[]; let g=o.g0, n=o.n0;
   for(let m=0;m<48;m++){
     const cal=(6+m)%12;
-    if(m>0 && cal===o.im) n=Math.min(12,n+1);
+    if(m>J && cal===o.im) n=Math.min(12,n+1);
     o.promos.filter(p=>p.m===m).forEach(p=>{ g=p.g; n=p.n; });
     const fy=Math.floor(m/12);
     const oldB=T[g][n-1][0], newB=T[g][n-1][fy+1];
     const oldA = curC + HOUSE[g] + oldProf(g);
     const newA = newC(m) + HOUSE[g] + (PROF[g]||0);
-    const on = m<=exitM;
+    const on = m>=J && m<=exitM;
     rows.push({m, fy, g, n, on, oldB, newB, oldA, newA, oldG:oldB+oldA, newG:newB+newA, diff: on ? (newB+newA)-(oldB+oldA) : 0});
   }
   const sum = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+r.diff,0);
@@ -408,7 +427,8 @@ function compute(){
   const total = fyGain.reduce((a,b)=>a+b,0);
 
   // net figures
-  const now = rows[M_NOW], jan = rows[o.sm], pay = rows[18]; // pay = Jan 2027, when Jul 2026+ arrears are paid
+  // headline month = when new salaries start (or the first month for someone who joined after that)
+  const now = rows[M_NOW], jan = rows[Math.max(o.sm, J)], pay = rows[18]; // pay = Jan 2027, when Jul 2026+ arrears are paid
   const dNow = deductions(now.oldG,now.oldB,o), dJan = deductions(jan.newG,jan.newB,o), dPay = deductions(pay.newG,pay.newB,o);
   const instal = arr2526/3;
   const sumB = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+(r.on?r.newB-r.oldB:0),0);
@@ -443,28 +463,40 @@ function line(l,v,cls=""){ return `<div class="ln ${cls}"><span>${l}</span><span
 function render(R){
   const {o,rows,now,jan,pay,dPay,dNow,dJan} = R;
   const label = r => `${r.g} · notch ${r.n}`;
-  const S = mLabel(o.sm), SL = mLong(o.sm), A2 = `Jul – ${mLabel(o.sm-1).slice(0,3)} 2026`;
+  const J = o.J, HM = Math.max(o.sm, J);                       // J: first month on staff (0 for existing staff)
+  const S = mLabel(HM), SL = mLong(HM);
+  const A1 = `${mLabel(Math.max(0,J)).slice(0,3)}${J<6?" 2025":" 2026"} – Jun 2026`;   // 2025/26 arrears window
+  const A2 = `${mLabel(Math.max(12,J)).slice(0,3)} – ${mLabel(o.sm-1).slice(0,3)} 2026`;  // Jul 2026 to the month before new salaries
+  const afterImpl = J >= o.sm;                                 // joined after new salaries started: no arrears
+  // comparison base: Oct 2026 old-terms payslip; a joiner's first payslip if they joined after Oct 2026
+  const base = J<=M_NOW ? {r:now, old:true, lbl:"Oct 2026", long:"Last old-terms payslip (Oct 2026)"}
+             : {r:rows[J], old:!afterImpl, lbl:`${mLabel(J)}`, long:`First payslip (${mLabel(J)}${afterImpl?"":", 2024/25 terms"})`};
+  const bG = base.old ? base.r.oldG : base.r.newG, bB = base.old ? base.r.oldB : base.r.newB, dBase = deductions(bG, bB, o);
   if(R.early){ renderLeaver(R, label); return; }
   const snaps = [
-    {t:"Last old-terms payslip (Oct 2026)", r:now, old:true},
+    afterImpl ? null : {t:base.long, r:base.r, old:true},
+    (J>0 && !afterImpl && J%12!==0) ? {t:`From ${mLabel(J)} (${FY[Math.floor(J/12)]} rates)`, r:rows[J]} : null,
     {t:"From Jul 2025 (2025/26 rates)", r:rows[0]},
     {t:"From Jul 2026 (2026/27 rates)", r:rows[12]},
-    {t:`${S} — first payslip on new terms`, r:jan, hl:true},
+    {t:`${S} — first payslip${afterImpl?"":" on new terms"}`, r:jan, hl:true},
     {t:"From Jul 2027 (2027/28 rates)", r:rows[24]},
     {t:"From Jul 2028 (2028/29 rates)", r:rows[36]},
-  ].filter(s=>s.r.m<=R.exitM);
+  ].filter(s=>s && s.r.m>=Math.max(0,J) && s.r.m<=R.exitM)
+   .filter((s,i,a)=>!(s.r===jan && !s.hl && a.some(x=>x.hl)));   // don't repeat the headline month
 
 
   let h = "";
   h += `<div class="kpis">
     <div class="kpi hl"><div class="k">${SL} basic pay · ${label(jan)}</div><div class="v">${fmt(jan.newB)}</div><div class="s">Plus ${allowText(R, jan, true).toLowerCase()} = gross ${fmt(jan.newG)}</div></div>
-    <div class="kpi"><div class="k">Arrears Jul 2025 – Jun 2026 (gross)</div><div class="v">${fmt(R.arr2526)}</div><div class="s">3 instalments of ~${fmt(R.instal)}</div></div>
-    <div class="kpi"><div class="k">Arrears ${A2} (gross)</div><div class="v">${fmt(R.arrJulDec26)}</div><div class="s">Paid with the January 2027 salary</div></div>
+    ${afterImpl ? `<div class="kpi"><div class="k">Arrears (gross)</div><div class="v">${fmt(0)}</div><div class="s">You joined after new salaries started (${mLabel(o.sm)}), so you're paid the new rates from the start.</div></div>
+    <div class="kpi"><div class="k">First month on staff</div><div class="v">${mLabel(J)}</div><div class="s">${label(jan)} · new rates</div></div>`
+    : `<div class="kpi"><div class="k">Arrears ${J>=12 ? "Jul 2025 – Jun 2026" : A1} (gross)</div><div class="v">${fmt(R.arr2526)}</div><div class="s">${J>=12 ? "None: you joined after June 2026" : `3 instalments of ~${fmt(R.instal)}`}</div></div>
+    <div class="kpi"><div class="k">Arrears ${A2} (gross)</div><div class="v">${fmt(R.arrJulDec26)}</div><div class="s">Paid with the January 2027 salary</div></div>`}
   </div>`;
 
   // 1. monthly gross by year
   h += `<section class="card"><h2><span class="sec-num">1</span>Monthly pay by year</h2>
-  <p class="lead">New-scale pay compared with your last old-terms payslip.</p>
+  <p class="lead">${afterImpl ? "Your pay on the new scale from the month you joined." : `New-scale pay compared with your ${J>M_NOW ? "first payslip" : "last old-terms payslip"}.`}</p>
   <div class="scroll"><table class="stack"><thead><tr><th>When</th><th>Grade · notch</th><th class="n">Basic</th><th class="n">Allowances</th><th class="n">Gross / month</th><th class="n">Est. net</th></tr></thead><tbody>`;
   snaps.forEach(s=>{
     const b = s.old? s.r.oldB : s.r.newB, a = s.old? s.r.oldA : s.r.newA, gsum=b+a;
@@ -475,11 +507,13 @@ function render(R){
 
   // 2 + 3. arrears
   const a = R.instNet, l = R.lumpNet;
-  h += `<section class="card"><h2><span class="sec-num">2</span>Arrears and the January 2027 payment</h2>
+  if(afterImpl) h += `<section class="card"><h2><span class="sec-num">2</span>Arrears</h2>
+  <p class="lead">None. You joined in ${mLong(J)}, after new salaries started in ${mLong(o.sm)}, so you've been paid at the new rates from your first payslip.</p></section>`;
+  else h += `<section class="card"><h2><span class="sec-num">2</span>Arrears and the January 2027 payment</h2>
   <p class="lead">New rates minus what you were paid on 2024/25 terms.</p>
   <div class="split">
     <div class="box"><h4>2025/26 arrears (3 instalments)</h4>
-      ${line("Total, Jul 2025 – Jun 2026", fmt(R.arr2526))}
+      ${line(`Total, ${J>=12 ? "Jul 2025 – Jun 2026" : A1}`, fmt(R.arr2526))}
       ${subline(`Basic ${fmtN(R.arrB2526)} + allowances ${fmtN(R.arr2526-R.arrB2526)}`)}
       ${line("<b>Each instalment</b>", "<b>"+fmt(R.instal)+"</b>")}
       ${a.pen>0.5?line("Pension", "−"+fmt(a.pen),"m"):""}
@@ -507,27 +541,27 @@ function render(R){
   // 3 + 4. net pay comparisons
   const netTable = (num, title, col, gB, dB, extra) => `<section class="card"><h2><span class="sec-num">${num}</span>${title}</h2>
   <p class="lead">${o.penr?`Pension (${(o.penr*100).toFixed(1)}%), `:""}${o.nssf?"NSSF, ":""}SHIF and Housing Levy come off before tax. PAYE is charged on what's left, then union dues at 2% of basic.</p>
-  <div class="scroll"><table><thead><tr><th>KES / month</th><th class="n">Oct 2026</th><th class="n">${col}</th><th class="n">Change</th></tr></thead><tbody>
-  ${[["Gross pay",now.oldG,gB]].concat(o.penr?[["Pension",-dNow.pen,-dB.pen]]:[]).concat(o.nssf?[["NSSF",-dNow.nssf,-dB.nssf]]:[]).concat([["SHIF",-dNow.shif,-dB.shif],["Housing Levy",-dNow.ahl,-dB.ahl],["Taxable pay",dNow.taxable,dB.taxable,"sub"],["PAYE",-dNow.paye,-dB.paye],["Union dues (2% of basic)",-dNow.union,-dB.union]]).map(([k,x,y,c])=>`<tr class="${c||""}"><td>${k}</td><td class="n">${fmtN(x)}</td><td class="n">${fmtN(y)}</td><td class="n">${fmtS(y-x)}</td></tr>`).join("")}
-  <tr class="tot"><td>Est. take-home</td><td class="n">${fmtN(dNow.net)}</td><td class="n">${fmtN(dB.net)}</td><td class="n pos">${fmtS(dB.net-dNow.net)}</td></tr>
+  <div class="scroll"><table><thead><tr><th>KES / month</th><th class="n">${base.lbl}</th><th class="n">${col}</th><th class="n">Change</th></tr></thead><tbody>
+  ${[["Gross pay",bG,gB]].concat(o.penr?[["Pension",-dBase.pen,-dB.pen]]:[]).concat(o.nssf?[["NSSF",-dBase.nssf,-dB.nssf]]:[]).concat([["SHIF",-dBase.shif,-dB.shif],["Housing Levy",-dBase.ahl,-dB.ahl],["Taxable pay",dBase.taxable,dB.taxable,"sub"],["PAYE",-dBase.paye,-dB.paye],["Union dues (2% of basic)",-dBase.union,-dB.union]]).map(([k,x,y,c])=>`<tr class="${c||""}"><td>${k}</td><td class="n">${fmtN(x)}</td><td class="n">${fmtN(y)}</td><td class="n">${fmtS(y-x)}</td></tr>`).join("")}
+  <tr class="tot"><td>Est. take-home</td><td class="n">${fmtN(dBase.net)}</td><td class="n">${fmtN(dB.net)}</td><td class="n pos">${fmtS(dB.net-dBase.net)}</td></tr>
   </tbody></table></div>
   <p class="note">SACCO and loans excluded.${extra||""}</p></section>`;
 
-  h += netTable(3, `Take-home pay: Oct 2026 vs ${SL}`, S, jan.newG, dJan);
+  if(!afterImpl) h += netTable(3, `Take-home pay: ${base.lbl} vs ${SL}`, S, jan.newG, dJan);
 
-  const M_JAN29 = 42, endM = Math.min(M_JAN29, R.exitM), end = rows[endM], dEnd = deductions(end.newG, end.newB, o), endL = endM===M_JAN29 ? "January 2029" : mLabel(endM);
-  h += netTable(4, `Take-home pay: Oct 2026 vs ${endL}`, endM===M_JAN29 ? "Jan 2029" : endL, end.newG, dEnd, " Tax rates may change depending on the government elected.");
+  const M_JAN29 = 42, endM = Math.max(Math.min(M_JAN29, R.exitM), Math.max(0,J)), end = rows[endM], dEnd = deductions(end.newG, end.newB, o), endL = endM===M_JAN29 ? "January 2029" : mLabel(endM);
+  if(endM > (afterImpl ? J : -1)) h += netTable(afterImpl ? 3 : 4, `Take-home pay: ${base.lbl} vs ${endL}`, endM===M_JAN29 ? "Jan 2029" : endL, end.newG, dEnd, " Tax rates may change depending on the government elected.");
 
   // 5. cumulative, as bars
-  const nFY = Math.floor(R.exitM/12)+1, gains = R.fyGain.slice(0,nFY);
-  const gmax = Math.max(1, ...gains);
-  h += `<section class="card"><h2><span class="sec-num">5</span>Cumulative gain from the new CBA, Jul 2025 – ${R.exitM<47?mLabel(R.exitM):"Jun 2029"}</h2>
+  const f0 = Math.floor(Math.max(0,J)/12), nFY = Math.floor(R.exitM/12)+1, gains = R.fyGain.slice(f0,nFY);
+  const gmax = Math.max(1, ...gains), secN = afterImpl ? (endM > J ? 4 : 3) : 5;
+  h += `<section class="card"><h2><span class="sec-num">${secN}</span>Cumulative gain from the new CBA, ${mLabel(Math.max(0,J))} – ${R.exitM<47?mLabel(R.exitM):"Jun 2029"}</h2>
   <p class="lead">Extra pay you get only because of the new CBA, compared with staying on 2024/25 rates with the same increments and promotions. Gross, before tax.</p>
   <div class="gbars">${gains.map((v,i)=>`<div class="gb">
-    <div class="gb-l"><b>${FY[i]}</b><span>${label(rows[i*12])}</span></div>
+    <div class="gb-l"><b>${FY[i+f0]}</b><span>${label(rows[Math.max((i+f0)*12, J)])}</span></div>
     <div class="gb-t"><div class="gb-f" style="width:${Math.max(0,100*v/gmax)}%"></div></div>
     <div class="gb-v">${fmt(v)}<small>Cumulative ${fmt(gains.slice(0,i+1).reduce((a,b)=>a+b,0))}</small></div></div>`).join("")}</div>
-  <div class="gb-tot"><span>Cumulative gain${R.exitM<47?"":", 4 years"}</span><span>${fmt(R.total)}</span></div></section>`;
+  <div class="gb-tot"><span>Cumulative gain${(R.exitM<47||J>0)?"":", 4 years"}</span><span>${fmt(R.total)}</span></div></section>`;
 
   // assumptions + detail
   h += assumBox(R);
@@ -539,6 +573,10 @@ function render(R){
 function assumBox(R){
   const o=R.o;
   const assum=[];
+  if(o.joiner && o.J>=0){
+    let fi=-1; for(let m=o.J+1;m<48;m++) if((6+m)%12===o.im){ fi=m; break; }
+    assum.push(`Joined ${mLabel(o.J)}: pay counted from then, starting on your first payslip's grade and notch.${fi>=0?` First increment ${mLabel(fi)}.`:""}`);
+  }
   if(R.exitM<47) assum.push(`Pay counted up to ${mLabel(R.exitM)}, your last month.`);
   if(o.cc===null) assum.push("No commuter amount entered, so no commuter arrears.");
   else if(o.cc>=COMMUTER) assum.push("Your commuter rate is kept.");
@@ -555,11 +593,12 @@ function assumBox(R){
 
 function renderLeaver(R, label){
   const {o,rows,last} = R, e=R.exitM, L=R.leaverNet, ae=R.aEnd, lastG = R.lastNew?last.newG:last.oldG, terms = R.lastNew?"new terms":"2024/25 terms";
+  const J = Math.max(0,o.J), nMonths = Math.max(0, ae-J+1);
   const a1 = rows.slice(0,Math.min(12,ae+1)).reduce((s,r)=>s+r.diff,0);
   const a2 = R.arr2526 + R.arrJulDec26 - a1;
   const tot = R.arr2526 + R.arrJulDec26;
   let h = `<div class="kpis">
-    <div class="kpi hl"><div class="k">Total arrears owed (gross)</div><div class="v">${fmt(tot)}</div><div class="s">Jul 2025 – ${mLabel(ae)} · ${ae+1} months</div></div>
+    <div class="kpi hl"><div class="k">Total arrears owed (gross)</div><div class="v">${fmt(tot)}</div><div class="s">${nMonths ? `${mLabel(J)} – ${mLabel(ae)} · ${nMonths} months` : "None: you joined after new salaries started"}</div></div>
     <div class="kpi"><div class="k">Estimated take-home</div><div class="v">${fmt(L.net)}</div><div class="s">After tax, levies, pension and union fee</div></div>
     <div class="kpi"><div class="k">Last salary (${terms})</div><div class="v">${fmt(lastG)}</div><div class="s">${mLabel(e)} · ${label(last)}</div></div>
   </div>`;
@@ -567,7 +606,7 @@ function renderLeaver(R, label){
     {t:`Last salary, ${mLabel(e)} (${terms})`, r:last, old:!R.lastNew},
     {t:"From Jul 2025 (2025/26 rates)", r:rows[0]},
     {t:"From Jul 2026 (2026/27 rates)", r:rows[12]},
-  ].filter(s=>s.r.m<=e);
+  ].filter(s=>s.r.m<=e && s.r.m>=J);
   h += `<section class="card"><h2><span class="sec-num">1</span>Your pay on the new scale</h2>
   <p class="lead">What you should have been paid for the months you served.</p>
   <div class="scroll"><table class="stack"><thead><tr><th>When</th><th>Grade · notch</th><th class="n">Basic</th><th class="n">Allowances</th><th class="n">Gross / month</th></tr></thead><tbody>
@@ -576,8 +615,8 @@ function renderLeaver(R, label){
   h += `<section class="card"><h2><span class="sec-num">2</span>Arrears owed to you</h2>
   <p class="lead">New rates minus what you were paid, for each month up to ${mLabel(ae)}.${R.lastNew?` From ${mLabel(o.sm)} you were paid at the new rates, so arrears stop there.`:""}</p>
   <div class="box" style="max-width:460px">
-    ${line(`Jul 2025 – ${mLabel(Math.min(11,ae))}`, fmt(a1))}
-    ${ae>=12?line(`Jul 2026 – ${mLabel(ae)}`, fmt(a2)):""}
+    ${J<=11 && ae>=J ? line(`${mLabel(J)} – ${mLabel(Math.min(11,ae))}`, fmt(a1)) : ""}
+    ${ae>=12 && ae>=J ? line(`${mLabel(Math.max(12,J))} – ${mLabel(ae)}`, fmt(a2)) : ""}
     ${line("<b>Total arrears</b>", "<b>"+fmt(tot)+"</b>")}
     ${subline(`Basic ${fmtN(R.arrBLeave)} + allowances ${fmtN(tot-R.arrBLeave)}`)}
     ${L.pen>0.5?line("Pension", "−"+fmt(L.pen),"m"):""}
@@ -592,14 +631,26 @@ function renderLeaver(R, label){
   $("out").innerHTML = h;
 }
 
-function syncPromo(){ ["p1","p2","lv"].forEach(p=>{ $(p+"f").style.display = $(p+"on").checked ? "" : "none"; }); }
+function syncPromo(){
+  ["p1","p2","lv","jn"].forEach(p=>{ $(p+"f").style.display = $(p+"on").checked ? "" : "none"; });
+  const jn = $("jnon").checked, col = firstPayCol();
+  $("spHead").textContent = jn ? "Starting point (first payslip)" : "Starting point (June 2025)";
+  $("g0lbl").textContent = jn ? "Grade on your first payslip" : "Grade on June 2025 payslip";
+  $("n0lbl").textContent = jn ? "Notch on your first payslip" : "Notch on June 2025 payslip";
+  $("n0hint").textContent = jn ? (col ? `You joined after new salaries started, so amounts are at ${FY[col-1]} rates.` : "Amounts are 2024/25 rates, as on your first payslip.")
+                               : "The 2024/25 baseline column in the salary tables. Match the amount to your June 2025 payslip.";
+  $("haCap1").textContent = jn ? "First payslip" : "June 2025";
+  if($("n0").dataset.col !== String(col)){ fillNotches($("n0"), $("g0").value, undefined, col); $("n0").dataset.col = String(col); }
+}
 document.querySelectorAll("select,input").forEach(el=>{ el.addEventListener("input",()=>{ syncPromo(); compute(); }); el.addEventListener("change",()=>{ syncPromo(); compute(); }); });
 
 // PDF: fill a summary of the inputs (shown only when printing), then open the print window ("Save as PDF").
 function fillPrintSummary(){
   const t = id => { const el=$(id); return el.tagName==="SELECT" ? el.options[el.selectedIndex].text : el.value; };
   const rows = [
-    ["Grade (June 2025)", t("g0")], ["Notch (June 2025)", t("n0")], ["Increment month", t("im")], ["New salaries start", t("ns")],
+    ...($("jnon").checked ? [["Joined", mLabel(idxFromMonthInput($("jnd").value))], ["Grade (first payslip)", t("g0")], ["Notch (first payslip)", t("n0")]]
+                         : [["Grade (June 2025)", t("g0")], ["Notch (June 2025)", t("n0")]]),
+    ["Increment month", t("im")], ["New salaries start", t("ns")],
   ];
   [["p1","First promotion"],["p2","Second promotion"]].forEach(([p,l])=>{ if($(p+"on").checked) rows.push([l, `${t(p+"g")}, ${t(p+"n")}, from ${mLabel(idxFromMonthInput($(p+"d").value))}`]); });
   if($("lvon").checked) rows.push(["Last month worked", mLabel(idxFromMonthInput($("lvd").value))]);
@@ -645,6 +696,7 @@ const defaultOf = el => {
 function resetForm(){
   FIELDS.forEach(el=>{ const d=defaultOf(el); if(el.type==="checkbox") el.checked=d; else el.value=d; delete el.dataset.touched; });
   PAIRS.forEach(([gs,ns])=>{ if($(gs)) fillNotches($(ns),$(gs).value, JS_DEFAULTS[ns]); });
+  $("n0").dataset.col = "0";
   const jr=$("juiceRev"); if(jr){ jr.hidden=true; $("juiceNum").textContent=""; }
   syncPromo(); compute();
 }
