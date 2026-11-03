@@ -91,20 +91,40 @@
         .pdf-btn:hover { background: #a51f1f; }
         .pdf-note { font-size: 0.75rem; color: var(--text-muted); margin: 6px 0 0; line-height: 1.4; }
         .print-summary { display: none; }
+        #printReport { display: none; }
+        .rep { font-size: 11.5px; color: #111; }
+        .rep h3 { font-size: 17px; margin: 0 0 2px; }
+        .rep .meta { color: #555; font-size: 11px; margin-bottom: 8px; }
+        .rep .grid { display: grid; grid-template-columns: repeat(3, max-content 1fr); gap: 2px 10px; margin: 6px 0 10px; }
+        .rep .grid dt { color: #555; } .rep .grid dd { margin: 0; font-weight: 600; }
+        .rep table { font-size: 11px; width: 100%; border-collapse: collapse; margin: 0; }
+        .rep th, .rep td { padding: 3px 6px; border-bottom: 1px solid #dcdfdc; text-align: left; }
+        .rep th { background: #f1f3f1; color: #5d6762; font-weight: 700; }
+        .rep .n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .rep tr.tot td { font-weight: 700; border-top: 2px solid #111; }
+        .rep p { margin: 4px 0; }
+        .rep .foot { color: #555; font-size: 10px; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 6px; }
+        .rep .muted { color: #555; }
+        .rep tr.sub td { color: #5d6762; font-style: italic; background: #fafbfa; }
+        .rep .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 4px 0 12px; }
+        .rep .tile { border: 1px solid #dcdfdc; border-radius: 8px; padding: 8px 10px; }
+        .rep .tile .k { font-size: 10.5px; color: #5d6762; font-weight: 600; }
+        .rep .tile .v { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .rep .tile .s { font-size: 10px; color: #5d6762; }
+        .rep .tile.hl { background: #1b4332; border-color: #1b4332; color: #fff; }
+        .rep .tile.hl .k, .rep .tile.hl .s { color: #d8f3dc; }
+        .rep .inpdf { margin-top: 14px; padding: 8px 10px; border: 1px solid #555; font-size: 11px; }
+        .rep-page { break-after: page; }
+        .rep-page.last { break-after: auto; }
+        .rep .detail .panel { padding: 10px 12px; margin-bottom: 10px; break-inside: avoid; }
+        .rep .detail .panel h2 { font-size: 14px; }
         @media print {
-            @page { margin: 12mm; }
+            @page { size: A4; margin: 11mm 11mm 14mm; @bottom-right { content: "Page " counter(page) " of " counter(pages); font-size: 9px; color: #777; } }
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             body { background: #fff; }
-            .container { box-shadow: none; padding: 0; max-width: none; }
-            .layout { display: block; }
-            .layout > div:first-child, .pdf-box, .dev-action-container { display: none !important; }
-            .print-summary { display: block; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin: 0 0 12px; font-size: 0.85rem; }
-            .print-summary h3 { margin: 0 0 6px; font-size: 0.95rem; }
-            .print-summary dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; margin: 0; }
-            .print-summary dt { color: var(--text-muted); } .print-summary dd { margin: 0; font-weight: 600; }
-            .headline-card, tr, .sec5-item, h2 { break-inside: avoid; }
-            h2 { break-after: avoid; }
-            .headline-grid { grid-template-columns: repeat(3, 1fr); }
+            body > *:not(#printReport) { display: none !important; }
+            #printReport { display: block; }
+            .rep tr { break-inside: avoid; }
         }
         .dev-action-container { margin-top: 15px; text-align: center; display: block; }
         .dev-btn { background-color: #2d6a4f; color: white; border: none; border-radius: 6px; padding: 12px 20px; font-size: 0.9rem; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -347,11 +367,15 @@
 
     <div class="disclaimer">
         <strong>Scope and disclaimer:</strong> Unofficial demo based on KUSU Return to Work Formula schedules signed on 30 October 2026. Union dues are fixed at 2%. Nothing you enter is stored or sent, and the form clears when you refresh or leave the page.
-        Leave allowance (Schedule II) is not included. The commuter phase-in timing isn't specified in the RTWF, so the option you choose is applied; arrears include the commuter increase.
+        Leave allowance (Schedule II) is unchanged by the agreement and paid once a year, so it isn't in arrears or monthly pay. The commuter phase-in timing isn't specified in the RTWF, so the option you choose is applied; arrears include the commuter increase.
     </div>
 </div>
 
+<div id="printReport"></div>
+
 <script>
+    // Schedule II annual leave allowance (unchanged by the agreement; paid once a year)
+    const leaveAllowances = { 15: 21980, 14: 21197, 13: 19021, 12: 17570, 11: 14087, 10: 8754, 9: 8754, 8: 8173, 7: 8056, 6: 7154, 5: 6225 };
     const houseAllowances = {
         15: 73715, 14: 62658, 13: 58972, 12: 55286, 11: 47915,
         10: 35383, 9: 31845, 8: 28307, 7: 24768, 6: 21230, 5: 17692
@@ -784,7 +808,9 @@
         </table>
         <p class="help-text" style="margin-top:8px">Pension, NSSF, SHIF and Housing Levy are deducted before PAYE (pension + NSSF relief capped at KES 30,000). SACCO and loans excluded.</p>`;
         document.getElementById("takeHomeComparisonContainer").innerHTML = compHtml;
+        LASTK = { timeline, newCommuter, monthGain, commuter, startIdx, J, joiner, afterImpl, HM, totalArr2526, totalArr2627, instalment, activeBasic, startGradeNow, dOld, dNew, oldGross, newGross, oldLbl, newLbl, pensionRate, deductNssf };
     }
+    let LASTK = null;   // last result, for the PDF report
 
     // PDF: fill a summary of the inputs (shown only when printing), then open the print window ("Save as PDF").
     function fillPrintSummary() {
@@ -800,7 +826,79 @@
         document.getElementById("printSummary").innerHTML = `<h3>Your details (estimate printed ${today})</h3><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
     }
     window.addEventListener("beforeprint", fillPrintSummary);
-    function downloadPdf() { fillPrintSummary(); try { window.print(); } catch (e) {} }
+    // PDF report (print only). Page 1: at a glance. Page 2: month-by-month arrears. Page 3+: detailed projections.
+    function fillPrintReport() {
+        const K = LASTK, box = document.getElementById("printReport");
+        if (!K) { box.innerHTML = ""; return; }
+        const $ = id => document.getElementById(id);
+        const t = id => { const el = $(id); return el.tagName === "SELECT" ? el.options[el.selectedIndex].text : el.value; };
+        const n = v => Math.round(v).toLocaleString("en-KE");
+        const kes = v => "KES " + n(v);
+        const sg = v => (Math.round(v) > 0 ? "+" : Math.round(v) < 0 ? "−" : "") + Math.abs(Math.round(v)).toLocaleString("en-KE");
+        const esc = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+        const tl = K.timeline, J = Math.max(1, K.J), sIdx = K.startIdx, st = tl[K.HM];
+        const today = new Date().toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" });
+        const dl = [
+            [K.joiner ? "First payslip" : "June 2025", `Grade ${$("gradeSelect").value} · notch ${+$("notchSelect").value + 1}`], ["Increment month", t("incrementMonth")], ["New salaries start", ixLabel(sIdx)],
+            ["Joined", K.joiner ? ixLabel(K.J) : "On staff June 2025"], ["Commuter now", `${n(K.commuter)} (${t("commuterPhase")})`],
+            ["House now", `${houseAllowances[$("gradeSelect").value].toLocaleString("en-KE")} (standard grade ${$("gradeSelect").value})`]
+        ];
+        [1, 2].forEach(k => { if ($(`promo${k}Toggle`).checked) dl.push([`Promotion ${k}`, `Grade ${$(`promo${k}Grade`).value} · notch ${+$(`promo${k}Notch`).value + 1} from ${t(`promo${k}Month`)}${K.joiner && ixOf($(`promo${k}Month`).value) <= K.J ? " (ignored: not after joining)" : ""}`]); });
+        dl.push(["Pension", `${(K.pensionRate * 100).toFixed(1)}% of basic`], ["NSSF", K.deductNssf ? "Deducted (tiered)" : "Not deducted"]);
+        let arrB = 0; for (let i = 1; i < sIdx; i++) if (tl[i].on) arrB += tl[i].basic - tl[i].baseline;
+        const tot = K.totalArr2526 + K.totalArr2627;
+        const head = `<h3>CBA 2025–2029 pay and arrears estimate (KUSU)</h3>
+            <div class="meta">Printed ${today} · Unofficial estimate from the KUSU Return to Work Formula of 30 Oct 2026. KUSU and payroll have the final word.</div>`;
+
+        // ---- page 1: at a glance ----
+        const tiles = [["Total arrears (gross)", kes(tot), K.afterImpl ? "none: joined after new salaries started" : `3 instalments of ${n(K.instalment)} + ${n(K.totalArr2627)} in Jan 2027`],
+                       [`New basic, ${ixLabel(K.HM)}`, kes(K.activeBasic), `grade ${st.grade} · notch ${st.notch + 1}`],
+                       ["Monthly take-home", sg(K.dNew.net - K.dOld.net), `${n(K.dOld.net)} → ${n(K.dNew.net)}`]];
+        let p1 = `<div class="rep-page">${head}
+            <div class="tiles">${tiles.map(([k, v, s2], i) => `<div class="tile${i === 0 ? " hl" : ""}"><div class="k">${esc(k)}</div><div class="v">${v}</div><div class="s">${esc(s2)}</div></div>`).join("")}</div>
+            <dl class="grid">${dl.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+            <table><thead><tr><th>KES</th><th class="n">Gross</th><th class="n">Est. take-home</th></tr></thead><tbody>
+              <tr><td>Arrears Jul 2025 – Jun 2026 · 3 instalments of ${n(K.instalment)}</td><td class="n">${n(K.totalArr2526)}</td><td class="n muted">gross only</td></tr>
+              <tr><td>Arrears Jul 2026 – ${ixLabel(sIdx - 1)} · with the January 2027 salary</td><td class="n">${n(K.totalArr2627)}</td><td class="n muted">gross only</td></tr>
+              <tr class="tot"><td>Total arrears</td><td class="n">${n(tot)}</td><td class="n muted">gross only</td></tr>
+              <tr><td>Monthly pay, ${esc(K.oldLbl)}</td><td class="n">${n(K.oldGross)}</td><td class="n">${n(K.dOld.net)}</td></tr>
+              <tr><td>Monthly pay, ${esc(K.newLbl)}</td><td class="n">${n(K.newGross)}</td><td class="n">${n(K.dNew.net)}</td></tr>
+            </tbody></table>
+            <p class="muted">${K.afterImpl ? `No arrears: you joined after new salaries started (${ixLabel(sIdx)}).` : `Of the arrears, basic ${n(arrB)} and commuter ${n(tot - arrB)}. Arrears are shown gross; tax and union dues are deducted when they're paid.`}</p>
+            <div class="inpdf"><b>In this PDF</b> · Page 2: arrears month by month, to check against your payslips, and the yearly leave allowance · Page 3 onwards: salary schedules, take-home and cumulative gain to 2029.</div></div>`;
+
+        // ---- page 2: month by month ----
+        let p2 = `<div class="rep-page"><h3>Arrears month by month</h3><div class="meta">New terms minus what you were paid on 2024/25 terms, at the same grade and notch, for each month on staff.</div>`;
+        if (sIdx - 1 >= J) {
+            p2 += `<table><thead><tr><th>Month</th><th>Grade · notch</th><th class="n">Basic 2024/25</th><th class="n">Basic new</th><th class="n">Commuter old → new</th><th class="n">Arrears</th></tr></thead><tbody>`;
+            for (let i = J; i < sIdx; i++) {
+                const w = tl[i];
+                if (i === 13 && J < 13) p2 += `<tr class="sub"><td colspan="5">Subtotal Jul 2025 – Jun 2026 (3 instalments)</td><td class="n">${n(K.totalArr2526)}</td></tr>`;
+                p2 += `<tr><td>${ixLabel(i)}</td><td>${w.grade} · ${w.notch + 1}</td><td class="n">${n(w.baseline)}</td><td class="n">${n(w.basic)}</td><td class="n">${n(K.commuter)} → ${n(K.newCommuter(i))}</td><td class="n">${n(K.monthGain(i))}</td></tr>`;
+            }
+            if (sIdx - 1 >= 13) p2 += `<tr class="sub"><td colspan="5">Subtotal ${ixLabel(Math.max(13, J))} – ${ixLabel(sIdx - 1)}</td><td class="n">${n(K.totalArr2627)}</td></tr>`;
+            p2 += `<tr class="tot"><td colspan="5">Total arrears</td><td class="n">${n(tot)}</td></tr></tbody></table>`;
+        } else p2 += `<p>No arrears months: you joined after new salaries started.</p>`;
+        const inc = +$("incrementMonth").value, ann = tl.map((w, i) => ({ w, i })).filter(({ w, i }) => i >= 1 && w.on && w.month === inc && i > K.J);
+        if (ann.length) p2 += `<h4 style="margin:12px 0 2px;font-size:12px">Paid once a year, normally with the ${t("incrementMonth")} (increment-month) salary</h4>
+            <p class="muted" style="margin:0 0 4px">Annual leave allowance (Schedule II) is unchanged by the agreement, so it isn't part of the arrears or the monthly take-home comparison.</p>
+            <table><thead><tr><th>Month</th><th>Grade</th><th class="n">Leave allowance</th></tr></thead><tbody>
+            ${ann.map(({ w, i }) => `<tr><td>${ixLabel(i)}</td><td>${w.grade}</td><td class="n">${n(leaveAllowances[w.grade])}</td></tr>`).join("")}</tbody></table>`;
+        const ccDefault = $("commuterInput").value.trim() === $("commuterInput").defaultValue && $("commuterPhase").value === "phased";
+        const ccTxt = ccDefault ? `Commuter: you didn't change the defaults (KES ${n(+$("commuterInput").defaultValue)} now, phased over 3 years from Jul 2025), so that's what the estimate uses. Enter your own amount and method if yours differ.`
+                                : `Commuter, from your inputs: KES ${n(K.commuter)} now, ${t("commuterPhase").charAt(0).toLowerCase() + t("commuterPhase").slice(1)}.`;
+        p2 += `<p class="muted" style="margin-top:8px">House allowance is the same on old and new terms, so it isn't part of the arrears. ${ccTxt} The RTWF doesn't set the timing.${K.joiner ? ` Pay counted from ${ixLabel(K.J)}, the month joined; first increment the next time the increment month comes round.` : ""}</p>
+            <div class="foot">Check any month diagonally against Schedule I of the KUSU RTWF (30 Oct 2026): "Basic 2024/25" is your grade and notch in the 2024/25 column, and "Basic new" is the same notch in that year's column, one notch down after each increment.</div></div>`;
+
+        // ---- page 3+: the detailed projections, as on screen (without the headline cards, already on page 1) ----
+        const panels = [...document.querySelectorAll(".layout > div:nth-child(2) > .panel")].map(el => el.outerHTML).join("");
+        const p3 = `<div class="rep-page last"><h3>Detailed projections</h3><div class="meta">The same results as on screen, July 2025 to June 2029.</div><div class="detail">${panels}</div></div>`;
+        box.innerHTML = `<div class="rep">${p1}${p2}${p3}</div>`;
+    }
+    window.addEventListener("beforeprint", fillPrintReport);
+    window.addEventListener("afterprint", () => { document.getElementById("printReport").innerHTML = ""; });   // don't leave figures in the page
+
+    function downloadPdf() { fillPrintSummary(); fillPrintReport(); try { window.print(); } catch (e) {} }
 
     // Anonymous usage count: one "kusu-calculator-used" event per visit, on the first real input by the user.
     // No values are sent. (Loading, refreshing or clearing the page does not count as use.)
@@ -824,6 +922,7 @@
         document.getElementById("promo1Box").style.display = "none";
         document.getElementById("promo2Box").style.display = "none";
         const dev = document.getElementById("devInfoBox"); if (dev) dev.style.display = "none";
+        document.getElementById("printReport").innerHTML = "";
         toggleJoin();         // back to the June 2025 labels; rebuilds notches for the default grade
         calculate();
     }

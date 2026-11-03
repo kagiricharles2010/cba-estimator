@@ -114,22 +114,44 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .pdf-btn:hover{background:#a51f1f}
 .pdf-note{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.4}
 .print-summary{display:none}
+#printReport{display:none}
+.rep{font-size:11.5px;color:#111;font-family:"Public Sans",system-ui,sans-serif}
+.rep h3{font-family:Literata,Georgia,serif;font-size:17px;margin:0 0 2px;padding:0;border:0}
+.rep .meta{color:#555;font-size:11px;margin-bottom:8px}
+.rep .grid{display:grid;grid-template-columns:repeat(3,max-content 1fr);gap:2px 10px;margin:6px 0 10px}
+.rep .grid dt{color:#555} .rep .grid dd{margin:0;font-weight:600}
+.rep table{font-size:11px;width:100%;border-collapse:collapse}
+.rep th,.rep td{padding:3px 6px;border-bottom:1px solid #dcdfdc}
+.rep th{background:#f1f3f1;color:#5d6762;font-weight:700}
+.rep tr.tot td{font-weight:700;border-top:2px solid #111}
+.rep p{margin:4px 0}
+.rep .foot{color:#555;font-size:10px;margin-top:10px;border-top:1px solid #ccc;padding-top:6px}
+.rep .muted{color:#555}
+.rep tr.sub td{color:#5d6762;font-style:italic;background:#fafbfa}
+.rep .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 12px}
+.rep .tile{border:1px solid #dcdfdc;border-radius:8px;padding:8px 10px}
+.rep .tile .k{font-size:10.5px;color:#5d6762;font-weight:600}
+.rep .tile .v{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+.rep .tile .s{font-size:10px;color:#5d6762}
+.rep .tile.hl{background:#1f5a43;border-color:#1f5a43;color:#fff}
+.rep .tile.hl .k,.rep .tile.hl .s{color:#cfe3d8}
+.rep .inpdf{margin-top:14px;padding:8px 10px;border:1px solid #555;font-size:11px}
+.rep .assume{background:none;border:1px solid #555;border-radius:0;color:#111}
+.rep-page{break-after:page}
+.rep-page.last{break-after:auto}
+.rep .outputs{gap:10px;font-size:11px}
+.rep .outputs .card{padding:10px 12px;break-inside:avoid}
+.rep .outputs h2{font-size:14px}
+.rep .outputs .lead,.rep .outputs .note{font-size:10.5px;margin:2px 0 6px}
+.rep .outputs .split{grid-template-columns:1fr 1fr}
+.rep .outputs .gb{grid-template-columns:110px 1fr 170px}
 @media print{
-  @page{margin:12mm}
+  @page{size:A4;margin:11mm 11mm 14mm;@bottom-right{content:"Page " counter(page) " of " counter(pages);font-size:9px;color:#777}}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  body{background:#fff;font-size:10.5pt}
-  .notice,.col-l,.juice,header .sub+.sub{display:none !important}
-  header{padding:0 0 6px}
-  .wrap{display:block;padding:0;max-width:none}
-  .print-summary{display:block;border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:0 0 14px;font-size:10pt}
-  .print-summary h3{margin:0 0 6px;padding:0;border:0;font-size:11pt}
-  .print-summary dl{display:grid;grid-template-columns:max-content 1fr;gap:2px 14px;margin:0}
-  .print-summary dt{color:var(--muted)} .print-summary dd{margin:0;font-weight:600}
-  .kpi,.box,.assume,.gb,tr,.ln,h2{break-inside:avoid}
-  h2{break-after:avoid}
-  .card{box-shadow:none}
-  .kpis{grid-template-columns:repeat(3,1fr)}
-  footer{padding:0}
+  body{background:#fff}
+  body>*:not(#printReport){display:none !important}
+  #printReport{display:block}
+  .rep tr{break-inside:avoid}
 }
 .juice{text-align:center;margin:26px auto 0;max-width:420px}
 .juice-q{margin:0 0 8px;color:var(--muted);font-size:14px}
@@ -241,6 +263,14 @@ footer p{margin:0 0 10px}
         <option value="full">Full 18,000 from Jul 2025</option>
       </select>
       <p class="hint">The RTWF says universities paying less "shall pay progressively within three years" but doesn't set the timing.</p>
+      <label for="bk">Book &amp; ICT allowance now (KES/year)</label>
+      <input type="text" inputmode="numeric" id="bk" placeholder="Blank = none" autocomplete="off">
+      <label for="bkph">Book &amp; ICT allowance (Schedule II)</label>
+      <select autocomplete="off" id="bkph">
+        <option value="jul25" selected>Due from Jul 2025 (with arrears)</option>
+        <option value="impl">From new salaries start (no arrears)</option>
+      </select>
+      <p class="hint">Paid once a year with the increment-month salary. The RTWF doesn't set the payment month.</p>
       <label class="chk"><input autocomplete="off" type="checkbox" id="nssf" checked> Deduct NSSF</label>
     </div>
     <div class="err" id="err"></div>
@@ -259,10 +289,10 @@ footer p{margin:0 0 10px}
   <div class="card">
     <h2>Scope and disclaimer</h2>
     <p><b>Demo, not certified.</b> This tool is unofficial and has not been checked or endorsed by UASU, IPUCCF, FKE, the Ministry of Education, KRA or any university. The figures are estimates, not pay advice. Your payroll office and UASU chapter have the final word.</p>
-    <p><b>Included:</b> basic salary (Schedule I); commuter and professorial allowances (Schedule II); arrears from Jul 2025 until new salaries start; PAYE, SHIF, Housing Levy, NSSF and pension; union dues at 2% of basic, including the basic part of arrears. Pension, NSSF, SHIF and Housing Levy are deducted before PAYE.</p>
+    <p><b>Included:</b> basic salary (Schedule I); commuter and professorial allowances (Schedule II); arrears from Jul 2025 until new salaries start; PAYE, SHIF, Housing Levy, NSSF and pension; union dues at 2% of basic, including the basic part of arrears; Book &amp; ICT allowance (Schedule II), once a year with the increment-month salary. Pension, NSSF, SHIF and Housing Levy are deducted before PAYE.</p>
     <p><b>Not included:</b></p>
     <ul>
-      <li>Leave and Book &amp; ICT allowances.</li>
+      <li>Leave allowance (unchanged by the agreement; paid once a year).</li>
       <li>Passage and baggage allowance (no rates given).</li>
       <li>Items still under negotiation (due 28 Feb 2027).</li>
       <li>Restored strike-period pay (Sept–Oct 2026).</li>
@@ -291,6 +321,8 @@ footer p{margin:0 0 10px}
     </div>
   </div>
 </footer>
+
+<div id="printReport"></div>
 
 <script>
 const T = {"15A":[[224631,232494,240632,249055,257772],[233616,244119,252664,261508,270661],[242962,256325,265297,274583,284194],[252680,269142,278562,288312,298403],[262789,282599,292490,302728,313324],[273301,296730,307116,317866,328992],[284233,311567,322472,333759,345441],[295604,327145,338596,350447,362713],[307428,343504,355527,367971,380850],[319725,360679,373303,386369,399892],[332515,378714,391969,405688,419888],[345816,397651,411569,425974,440884]],"14A":[[193182,199944,206943,214187,221684],[200911,209942,217290,224896,232768],[208947,220440,228156,236142,244407],[217306,231463,239565,247950,256629],[226000,243036,251543,260348,269461],[235040,255188,264120,273365,282933],[244442,267948,277327,287034,297081],[254220,281346,291194,301386,311935],[264389,295413,305753,316455,327531],[274965,310185,321042,332279,343909],[285965,325694,337094,348893,361105],[297403,341979,353949,366338,379160]],"13A":[[154739,160155,165761,171563,177568],[160929,168163,174049,180141,186446],[167367,176571,182751,189148,195769],[174063,185400,191889,198606,205558],[181025,194671,201485,208537,215836],[188267,204405,211560,218965,226629],[195798,214625,222137,229912,237959],[203631,225357,233245,241409,249859],[211776,236625,244907,253479,262351],[220247,248457,257153,266154,275470],[229057,260881,270012,279463,289245],[238221,273925,283513,293436,303707]],"12A":[[121928,126196,130613,135185,139917],[126805,132506,137144,141945,146914],[131877,139132,144002,149043,154260],[137154,146090,151204,156497,161975],[142640,153395,158764,164321,170073],[148347,161065,166703,172538,178577],[154281,169118,175038,181165,187506],[160453,177574,183790,190223,196881],[166872,186454,192980,199735,206726],[173548,195777,202630,209723,217064],[180490,205566,212761,220208,227916],[187710,215845,223400,231219,239312]],"11A":[[107872,111648,115556,119601,123788],[112187,117231,121335,125582,129978],[116675,123093,127402,131862,136478],[121344,129248,133772,138455,143301],[126198,135711,140461,145378,150467],[131246,142497,147485,152647,157990],[136496,149622,154859,160280,165890],[141956,157104,162603,168295,174186],[147636,164960,170734,176710,182895],[153542,173209,179272,185547,192042],[159683,181870,188236,194825,201644],[166072,190963,197647,204565,211725]],"10A":[[63647,65875,68181,70568,73038],[66194,69170,71591,74097,76691],[68843,72629,75172,77804,80528],[71596,76260,78930,81693,84553],[74460,80074,82877,85778,88781],[77439,84079,87022,90068,93221],[80538,88283,91373,94572,97883],[83759,92697,95942,99300,102776],[87110,97333,100740,104266,107916],[90594,102201,105779,109482,113314],[94218,107311,111067,114955,118979],[97988,112678,116622,120704,124929]]};
@@ -365,7 +397,7 @@ function compute(){
     g0:$("g0").value, nJun:+$("n0").value, im:+$("im").value, sm:+$("ns").value,
     promos:[], cc:numOrNull("cc"),
     cp:numOrNull("cp"),
-    cph:$("cph").value, nssf:$("nssf").checked, penr:Math.min(30,(numOrNull("penr")??0))/100
+    cph:$("cph").value, bk:numOrNull("bk"), bkph:$("bkph").value, nssf:$("nssf").checked, penr:Math.min(30,(numOrNull("penr")??0))/100
   };
   // Joiners (after June 2025) enter the month joined and the grade/notch on their FIRST payslip.
   // Everyone else enters the June 2025 notch (2024/25 baseline); a July increment moves it down one notch in July 2025.
@@ -404,6 +436,10 @@ function compute(){
     if(o.cph==="phased_impl"){ if(m<o.sm) return curC; const step=Math.floor((m-o.sm)/12)+1; return curC + (COMMUTER-curC)*Math.min(step,3)/3; }
     return curC + (COMMUTER-curC)*Math.min(Math.floor(m/12)+1,3)/3; };
   const oldProf = g => PROF[g] ? (o.cp===null ? PROF[g] : o.cp) : 0;
+  // Book & ICT (Schedule II): one amount a year, paid with the increment-month salary (first one after joining, like increments).
+  // Extra over what is paid now; from Jul 2025 (arrears) or only from new salaries start. Not part of the monthly take-home.
+  const curBk = o.bk===null ? 0 : o.bk;
+  const bookGain = (m, g) => (o.bkph==="impl" && m<o.sm) ? 0 : Math.max(0, BOOK[g] - curBk);
 
   // month-by-month path
   // Before a joiner's first month nothing is counted. Increments happen each time the increment month comes round
@@ -418,12 +454,15 @@ function compute(){
     const oldA = curC + HOUSE[g] + oldProf(g);
     const newA = newC(m) + HOUSE[g] + (PROF[g]||0);
     const on = m>=J && m<=exitM;
-    rows.push({m, fy, g, n, on, oldB, newB, oldA, newA, oldG:oldB+oldA, newG:newB+newA, diff: on ? (newB+newA)-(oldB+oldA) : 0});
+    const annual = on && cal===o.im && (!o.joiner || m>J);          // once-a-year allowances paid this month
+    const book = annual ? bookGain(m, g) : 0;
+    rows.push({m, fy, g, n, on, oldB, newB, oldA, newA, oldG:oldB+oldA, newG:newB+newA, annual, book, diff: on ? (newB+newA)-(oldB+oldA)+book : 0});
   }
   const sum = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+r.diff,0);
   const arr2526 = sum(0,12);
   const arrJulDec26 = sum(12,o.sm);
   const fyGain = [0,1,2,3].map(fy=>sum(fy*12,fy*12+12));
+  const sumBk = (a,b)=>rows.slice(a,b).reduce((s,r)=>s+r.book,0);
   const total = fyGain.reduce((a,b)=>a+b,0);
 
   // net figures
@@ -444,7 +483,7 @@ function compute(){
   // Arrears stop when new salaries start (months after that were already paid at new rates).
   const early = exitM < 18, last = rows[exitM], lastNew = exitM >= o.sm, aEnd = Math.min(exitM, o.sm-1);
   const leaverNet = withArr(arr2526+arrJulDec26, sumB(0,aEnd+1), lastNew?last.newG:last.oldG, lastNew?last.newB:last.oldB);
-  render({o,exitM,early,last,lastNew,aEnd,leaverNet,arrB2526:sumB(0,12),arrB2:sumB(12,o.sm),arrBLeave:sumB(0,aEnd+1),rows,arr2526,arrJulDec26,fyGain,total,now,jan,pay,dPay,dNow,dJan,instal,instNet,lumpNet,curC,newC});
+  render({o,exitM,early,last,lastNew,aEnd,leaverNet,arrB2526:sumB(0,12),arrB2:sumB(12,o.sm),arrBLeave:sumB(0,aEnd+1),bk2526:sumBk(0,12),bk2:sumBk(12,o.sm),bkTotal:sumBk(0,48),rows,arr2526,arrJulDec26,fyGain,total,now,jan,pay,dPay,dNow,dJan,instal,instNet,lumpNet,curC,newC});
 }
 
 // what the allowances figure is made of, for a given month (new or old terms)
@@ -460,7 +499,9 @@ function allowText(R, r, isNew){
 function subline(t){ return `<div class="ln m sub"><span>${t}</span></div>`; }
 function line(l,v,cls=""){ return `<div class="ln ${cls}"><span>${l}</span><span>${v}</span></div>`; }
 
+let LAST = null;   // last result, for the PDF report
 function render(R){
+  LAST = R;
   const {o,rows,now,jan,pay,dPay,dNow,dJan} = R;
   const label = r => `${r.g} · notch ${r.n}`;
   const J = o.J, HM = Math.max(o.sm, J);                       // J: first month on staff (0 for existing staff)
@@ -503,7 +544,7 @@ function render(R){
     h += `<tr class="${s.hl?'hl':''}"><td class="ttl">${s.t}</td><td data-l="Grade · notch">${label(s.r)}</td><td class="n" data-l="Basic">${fmt(b)}</td><td class="n" data-l="Allowances">${fmt(a)}</td><td class="n" data-l="Gross / month">${fmt(gsum)}</td><td class="n" data-l="Est. net">${fmt(deductions(gsum,b,o).net)}</td></tr>`;
   });
   h += `</tbody></table></div>
-  <p class="note">Allowances in ${S}: ${allowText(R, jan, true)}. Leave and Book &amp; ICT not included.</p></section>`;
+  <p class="note">Allowances in ${S}: ${allowText(R, jan, true)}. Leave and Book &amp; ICT allowances are paid once a year, so they're not in these monthly figures.</p></section>`;
 
   // 2 + 3. arrears
   const a = R.instNet, l = R.lumpNet;
@@ -514,7 +555,7 @@ function render(R){
   <div class="split">
     <div class="box"><h4>2025/26 arrears (3 instalments)</h4>
       ${line(`Total, ${J>=12 ? "Jul 2025 – Jun 2026" : A1}`, fmt(R.arr2526))}
-      ${subline(`Basic ${fmtN(R.arrB2526)} + allowances ${fmtN(R.arr2526-R.arrB2526)}`)}
+      ${subline(`Basic ${fmtN(R.arrB2526)} + allowances ${fmtN(R.arr2526-R.arrB2526)}${R.bk2526?` (incl. Book &amp; ICT ${fmtN(R.bk2526)})`:""}`)}
       ${line("<b>Each instalment</b>", "<b>"+fmt(R.instal)+"</b>")}
       ${a.pen>0.5?line("Pension", "−"+fmt(a.pen),"m"):""}
       ${a.nssf>0.5?line("NSSF", "−"+fmt(a.nssf),"m"):""}
@@ -530,7 +571,7 @@ function render(R){
       ${subline(allowText(R, pay, true))}
       ${line("January salary", fmt(pay.newG))}
       ${line(`Arrears, ${A2}`, fmt(R.arrJulDec26))}
-      ${subline(`Basic ${fmtN(R.arrB2)} + allowances ${fmtN(R.arrJulDec26-R.arrB2)}`)}
+      ${subline(`Basic ${fmtN(R.arrB2)} + allowances ${fmtN(R.arrJulDec26-R.arrB2)}${R.bk2?` (incl. Book &amp; ICT ${fmtN(R.bk2)})`:""}`)}
       ${line("<b>Total gross</b>", "<b>"+fmt(pay.newG+R.arrJulDec26)+"</b>")}
       ${line("Take-home: salary", fmt(dPay.net),"m")}
       ${line("Take-home: arrears", fmt(l.net),"m")}
@@ -556,7 +597,7 @@ function render(R){
   const f0 = Math.floor(Math.max(0,J)/12), nFY = Math.floor(R.exitM/12)+1, gains = R.fyGain.slice(f0,nFY);
   const gmax = Math.max(1, ...gains), secN = afterImpl ? (endM > J ? 4 : 3) : 5;
   h += `<section class="card"><h2><span class="sec-num">${secN}</span>Cumulative gain from the new CBA, ${mLabel(Math.max(0,J))} – ${R.exitM<47?mLabel(R.exitM):"Jun 2029"}</h2>
-  <p class="lead">Extra pay you get only because of the new CBA, compared with staying on 2024/25 rates with the same increments and promotions. Gross, before tax.</p>
+  <p class="lead">Extra pay you get only because of the new CBA, compared with staying on 2024/25 rates with the same increments and promotions. Gross, before tax.${R.bkTotal?` Includes Book &amp; ICT ${fmtN(R.bkTotal)}.`:""}</p>
   <div class="gbars">${gains.map((v,i)=>`<div class="gb">
     <div class="gb-l"><b>${FY[i+f0]}</b><span>${label(rows[Math.max((i+f0)*12, J)])}</span></div>
     <div class="gb-t"><div class="gb-f" style="width:${Math.max(0,100*v/gmax)}%"></div></div>
@@ -578,16 +619,21 @@ function assumBox(R){
     assum.push(`Joined ${mLabel(o.J)}: pay counted from then, starting on your first payslip's grade and notch.${fi>=0?` First increment ${mLabel(fi)}.`:""}`);
   }
   if(R.exitM<47) assum.push(`Pay counted up to ${mLabel(R.exitM)}, your last month.`);
-  if(o.cc===null) assum.push("No commuter amount entered, so no commuter arrears.");
-  else if(o.cc>=COMMUTER) assum.push("Your commuter rate is kept.");
+  // say whether the commuter figures come from the defaults or from what the user entered
+  const ccDefault = $("cc").value.trim()===$("cc").defaultValue && o.cph==="phased";
+  const ccFrom = ccDefault ? `Commuter: you didn't change the defaults (KES ${$("cc").defaultValue} now, phased over 3 years from Jul 2025), so the estimate uses` : "Commuter, from your inputs:";
+  if(o.cc===null) assum.push("Commuter, from your inputs: no amount entered (18,000 or more), so no commuter arrears.");
+  else if(o.cc>=COMMUTER) assum.push(`Commuter, from your inputs: ${fmt(o.cc)} is kept, so no commuter arrears.`);
   else {
     const t = o.cph==="full" ? `${fmt(o.cc)} → KES 18,000 from Jul 2025.`
       : o.cph==="phased_impl" ? `${fmt(o.cc)} until new salaries start, then ${fmt(R.newC(o.sm))} (${mLabel(o.sm)}), ${fmt(R.newC(o.sm+12))} (${mLabel(o.sm+12)}), KES 18,000 from ${mLabel(o.sm+24)}. No commuter arrears.`
       : `${fmt(o.cc)} → ${fmt(R.newC(0))} (2025/26), ${fmt(R.newC(12))} (2026/27), KES 18,000 from 2027/28.`;
-    assum.push(`Commuter phase-in timing isn't specified in the RTWF. Assumed: ${t}`);
+    assum.push(`${ccFrom} ${t}${ccDefault ? " Enter your own amount and method if yours differ." : ""} The RTWF doesn't set the timing.`);
   }
   assum.push(`House allowance at the standard ${R.o.g0} rate (${fmt(HOUSE[R.o.g0])}), following any promotion.`);
-  assum.push("Leave and Book &amp; ICT allowances excluded.");
+  { const fb = R.rows.find(r=>r.annual);
+    const bkTxt = o.bk===null ? "none paid now" : `${fmt(o.bk)} a year paid now`;
+    assum.push(`Book &amp; ICT allowance (Schedule II): ${fmt(BOOK[R.rows[Math.max(0,o.J)].g])} a year for ${R.rows[Math.max(0,o.J)].g}, paid with the ${MONTHS[o.im]} (increment-month) salary${fb?`, first in ${mLabel(fb.m)}`:""}; ${bkTxt}; ${o.bkph==="impl" ? "counted only from new salaries start, so no Book &amp; ICT arrears" : "due from Jul 2025, so missed payments are arrears"}. The RTWF doesn't set the payment month.`); }
   return `<div class="assume"><b>Assumptions</b><ul>${assum.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
 }
 
@@ -618,7 +664,7 @@ function renderLeaver(R, label){
     ${J<=11 && ae>=J ? line(`${mLabel(J)} – ${mLabel(Math.min(11,ae))}`, fmt(a1)) : ""}
     ${ae>=12 && ae>=J ? line(`${mLabel(Math.max(12,J))} – ${mLabel(ae)}`, fmt(a2)) : ""}
     ${line("<b>Total arrears</b>", "<b>"+fmt(tot)+"</b>")}
-    ${subline(`Basic ${fmtN(R.arrBLeave)} + allowances ${fmtN(tot-R.arrBLeave)}`)}
+    ${subline(`Basic ${fmtN(R.arrBLeave)} + allowances ${fmtN(tot-R.arrBLeave)}${(R.bk2526+R.bk2)?` (incl. Book &amp; ICT ${fmtN(R.bk2526+R.bk2)})`:""}`)}
     ${L.pen>0.5?line("Pension", "−"+fmt(L.pen),"m"):""}
     ${L.nssf>0.5?line("NSSF", "−"+fmt(L.nssf),"m"):""}
     ${line("SHIF + Housing Levy", "−"+fmt(L.shif+L.ahl),"m")}
@@ -660,7 +706,90 @@ function fillPrintSummary(){
   $("printSummary").innerHTML = `<h3>Your details (estimate printed ${today})</h3><dl>${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
 }
 window.addEventListener("beforeprint", fillPrintSummary);
-$("pdfBtn").addEventListener("click", ()=>{ fillPrintSummary(); try{ window.print(); }catch(e){} });
+// PDF report (print only). Page 1: at a glance. Page 2: month-by-month arrears. Page 3+: detailed projections.
+function fillPrintReport(){
+  const R = LAST; if(!R){ $("printReport").innerHTML=""; return; }
+  const o = R.o, rows = R.rows, J = Math.max(0,o.J), sm = o.sm, esc = t => String(t).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  const t = id => { const el=$(id); return el.tagName==="SELECT" ? el.options[el.selectedIndex].text : el.value; };
+  const today = new Date().toLocaleDateString("en-KE",{day:"numeric",month:"long",year:"numeric"});
+  const left = R.exitM<47, HM = Math.max(sm, o.J), start = rows[HM], afterImpl = o.J>=sm, leftBefore = R.exitM < sm;
+  const dl = [
+    [o.joiner ? "First payslip" : "June 2025", `${o.g0} · notch ${o.nJun}`], ["Increment month", MONTHS[o.im]], ["New salaries start", mLabel(sm)],
+    ["Joined", o.joiner ? mLabel(o.J) : "On staff June 2025"], ["Last month worked", left ? mLabel(R.exitM) : "Still on staff"],
+    ["Commuter now", o.cc===null ? "18,000 or more" : `${fmtN(o.cc)} (${t("cph")})`], ["House now", `${fmtN(HOUSE[o.g0])} (standard ${o.g0})`],
+    ...o.promos.map(p=>[`Promotion ${p.k}`, `${p.g} · notch ${p.n} from ${mLabel(p.m)}`]),
+    ...(PROF[o.g0] || o.promos.some(p=>PROF[p.g]) ? [["Professorial now", o.cp===null ? "Standard rate" : fmtN(o.cp)]] : []),
+    ["Book & ICT now", `${o.bk===null ? "None" : fmtN(o.bk)+" a year"} (${o.bkph==="impl" ? "from new salaries start" : "due from Jul 2025"})`],
+    ["Pension", `${t("penr")}% of basic`], ["NSSF", $("nssf").checked ? "Deducted" : "Not deducted"]
+  ];
+  const arrB = R.arrB2526 + R.arrB2, tot = R.arr2526 + R.arrJulDec26;
+  const head = `<h3>CBA 2025–2029 pay and arrears estimate</h3>
+    <div class="meta">Printed ${today} · Unofficial estimate from the Return to Work Formula of 30 Oct 2026. UASU and payroll have the final word.</div>`;
+
+  // ---- page 1: at a glance ----
+  const base = o.J<=M_NOW ? {d:R.dNow, g:R.now.oldG, lbl:"Oct 2026 (old terms)"} : null;
+  let net26, netJul, tiles;
+  if(R.early){
+    tiles = [["Total arrears (gross)", fmt(tot), `${mLabel(J)} – ${mLabel(R.aEnd)}`], ["Estimated take-home", fmt(R.leaverNet.net), "paid as one sum when you leave"], ["Last salary", fmt(R.lastNew?R.last.newG:R.last.oldG), `${mLabel(R.exitM)} · ${R.last.g} · notch ${R.last.n}`]];
+  } else {
+    net26 = R.instNet.net*3; netJul = R.lumpNet.net;
+    tiles = [["Total arrears (gross)", fmt(tot), afterImpl ? "none: joined after new salaries started" : `take-home about ${fmt(net26+netJul)}`],
+             [`New basic, ${mLabel(HM)}`, fmt(start.newB), `${start.g} · notch ${start.n} · gross ${fmt(start.newG)}`],
+             base ? ["Monthly take-home", fmtS(R.dJan.net-base.d.net), `${fmt(base.d.net)} → ${fmt(R.dJan.net)}`] : ["Monthly take-home", fmt(R.dJan.net), `from ${mLabel(HM)}`]];
+  }
+  let p1 = `<div class="rep-page">${head}
+    <div class="tiles">${tiles.map(([k,v,s2],i)=>`<div class="tile${i===0?" hl":""}"><div class="k">${esc(k)}</div><div class="v">${v}</div><div class="s">${esc(s2)}</div></div>`).join("")}</div>
+    <dl class="grid">${dl.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`;
+  if(R.early){
+    p1 += `<table><thead><tr><th>KES</th><th class="n">Gross</th><th class="n">Est. take-home</th></tr></thead><tbody>
+      <tr><td>Arrears owed, ${mLabel(J)} – ${mLabel(R.aEnd)}</td><td class="n">${fmtN(tot)}</td><td class="n">${fmtN(R.leaverNet.net)}</td></tr>
+      <tr class="sub"><td colspan="3">Basic ${fmtN(R.arrBLeave)} + allowances ${fmtN(tot-R.arrBLeave)}${R.bk2526+R.bk2 ? ` (incl. Book &amp; ICT ${fmtN(R.bk2526+R.bk2)})` : ""}. Assumed paid as one sum, taxed with your last salary.</td></tr></tbody></table>`;
+  } else {
+    p1 += `<table><thead><tr><th>KES</th><th class="n">Gross</th><th class="n">Est. take-home</th></tr></thead><tbody>
+      <tr><td>Arrears Jul 2025 – Jun 2026 · 3 instalments of ${fmtN(R.instal)}</td><td class="n">${fmtN(R.arr2526)}</td><td class="n">${fmtN(net26)}</td></tr>
+      <tr><td>Arrears ${mLabel(Math.max(12,J))} – ${mLabel(sm-1)} · with the January 2027 salary</td><td class="n">${fmtN(R.arrJulDec26)}</td><td class="n">${fmtN(netJul)}</td></tr>
+      <tr class="tot"><td>Total arrears</td><td class="n">${fmtN(tot)}</td><td class="n">${fmtN(net26+netJul)}</td></tr>
+      ${base ? `<tr><td>Monthly pay, ${base.lbl}</td><td class="n">${fmtN(base.g)}</td><td class="n">${fmtN(base.d.net)}</td></tr>` : ""}
+      <tr><td>Monthly pay from ${mLabel(HM)} (new terms)</td><td class="n">${fmtN(start.newG)}</td><td class="n">${fmtN(R.dJan.net)}</td></tr>
+      ${HM<18 && !left ? `<tr><td>January 2027 payslip (salary + arrears)</td><td class="n">${fmtN(R.pay.newG+R.arrJulDec26)}</td><td class="n">${fmtN(R.dPay.net+netJul)}</td></tr>` : ""}
+      </tbody></table>
+      <p class="muted">${afterImpl ? `No arrears: you joined after new salaries started (${mLabel(sm)}).` : `Of the arrears, basic ${fmtN(arrB)} and allowances ${fmtN(tot-arrB)}${R.bk2526+R.bk2 ? `, including Book &amp; ICT ${fmtN(R.bk2526+R.bk2)}` : ""}.`}</p>`;
+  }
+  p1 += `<div class="inpdf"><b>In this PDF</b> · Page 2: arrears month by month, the once-a-year allowances and the assumptions · Page 3 onwards: detailed projections to 2029.</div></div>`;
+
+  // ---- page 2: month by month ----
+  const a = J, b = Math.min(R.exitM, sm-1);
+  let p2 = `<div class="rep-page"><h3>Arrears month by month</h3><div class="meta">New terms minus what you were paid on 2024/25 terms, at the same grade and notch, for each month on staff.</div>`;
+  const hasBk = rows.slice(a, b+1).some(w=>w.book), cs = hasBk ? 7 : 6;
+  if(b >= a){
+    p2 += `<table><thead><tr><th>Month</th><th>Grade · notch</th><th class="n">Basic 2024/25</th><th class="n">Basic new</th><th class="n">Commuter old → new</th><th class="n">Other allowances (new − old)</th>${hasBk?'<th class="n">Book &amp; ICT</th>':""}<th class="n">Arrears</th></tr></thead><tbody>`;
+    for(let m=a; m<=b; m++){
+      const w = rows[m], cNew = R.newC(m), other = (w.newA-w.oldA) - (cNew-R.curC);
+      if(m===12 && a<12) p2 += `<tr class="sub"><td colspan="${cs}">Subtotal Jul 2025 – Jun 2026 (3 instalments)</td><td class="n">${fmtN(R.arr2526)}</td></tr>`;
+      p2 += `<tr><td>${mLabel(m)}</td><td>${w.g} · ${w.n}</td><td class="n">${fmtN(w.oldB)}</td><td class="n">${fmtN(w.newB)}</td><td class="n">${fmtN(R.curC)} → ${fmtN(cNew)}</td><td class="n">${Math.round(other) ? fmtS(other) : ""}</td>${hasBk?`<td class="n">${w.book?fmtN(w.book):""}</td>`:""}<td class="n">${fmtN(w.diff)}</td></tr>`;
+    }
+    if(b>=12) p2 += `<tr class="sub"><td colspan="${cs}">Subtotal ${mLabel(Math.max(12,a))} – ${mLabel(b)}</td><td class="n">${fmtN(R.arrJulDec26)}</td></tr>`;
+    p2 += `<tr class="tot"><td colspan="${cs}">Total arrears</td><td class="n">${fmtN(tot)}</td></tr></tbody></table>`;
+  } else p2 += `<p>No arrears months: you joined after new salaries started.</p>`;
+  const ann = rows.filter(w=>w.annual);
+  if(ann.length) p2 += `<h4 style="margin:12px 0 2px;font-size:12px">Paid once a year, normally with the ${MONTHS[o.im]} (increment-month) salary</h4>
+    <p class="muted" style="margin:0 0 4px">Not part of the monthly take-home comparison.</p>
+    <table><thead><tr><th>Month</th><th>Grade</th><th class="n">Leave allowance</th><th class="n">Book &amp; ICT (Schedule II)</th><th class="n">Book &amp; ICT gain from the CBA</th><th>When</th></tr></thead><tbody>
+    ${ann.map(w=>`<tr><td>${mLabel(w.m)}</td><td>${w.g}</td><td class="n">${fmtN(LEAVE[w.g])}</td><td class="n">${fmtN(BOOK[w.g])}</td><td class="n">${fmtN(w.book)}</td><td>${w.m<sm ? (w.book ? "in arrears" : "before new salaries") : "with that month's salary"}</td></tr>`).join("")}
+    </tbody></table>`;
+  { const tmp=document.createElement("div"); tmp.innerHTML=assumBox(R); p2 += `<div class="assume" style="margin-top:10px;font-size:11px">${tmp.firstElementChild.innerHTML}</div>`; }
+  p2 += `<div class="foot">Check any month diagonally against Schedule I of the UASU RTWF (30 Oct 2026): "Basic 2024/25" is your grade and notch in the 2024/25 column, and "Basic new" is the same notch in that year's column, one notch down after each increment.</div></div>`;
+
+  // ---- page 3+: the detailed projections, as on screen (without the headline tiles, already on page 1) ----
+  const det = $("out").cloneNode(true); det.removeAttribute("id");
+  det.querySelectorAll(".kpis,.assume").forEach(e=>e.remove());   // tiles are on page 1, assumptions on page 2
+  const p3 = `<div class="rep-page last"><h3>Detailed projections</h3><div class="meta">The same results as on screen, July 2025 to June 2029.</div><div class="outputs">${det.innerHTML}</div></div>`;
+  $("printReport").innerHTML = `<div class="rep">${p1}${p2}${p3}</div>`;
+}
+window.addEventListener("beforeprint", fillPrintReport);
+window.addEventListener("afterprint", ()=>{ $("printReport").innerHTML=""; });   // don't leave figures in the page
+
+$("pdfBtn").addEventListener("click", ()=>{ fillPrintSummary(); fillPrintReport(); try{ window.print(); }catch(e){} });
 
 // donate button: number assembled at runtime so it isn't plain text in the page
 (()=>{ const parts=["0721","643","535"];
@@ -697,6 +826,7 @@ function resetForm(){
   FIELDS.forEach(el=>{ const d=defaultOf(el); if(el.type==="checkbox") el.checked=d; else el.value=d; delete el.dataset.touched; });
   PAIRS.forEach(([gs,ns])=>{ if($(gs)) fillNotches($(ns),$(gs).value, JS_DEFAULTS[ns]); });
   $("n0").dataset.col = "0";
+  if($("printReport")) $("printReport").innerHTML = "";
   const jr=$("juiceRev"); if(jr){ jr.hidden=true; $("juiceNum").textContent=""; }
   syncPromo(); compute();
 }
