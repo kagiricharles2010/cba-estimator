@@ -199,7 +199,7 @@ footer p{margin:0 0 10px}
     </div>
     <label for="g0" id="g0lbl">Grade on June 2025 payslip</label>
     <select autocomplete="off" id="g0"></select>
-    <label for="n0" id="n0lbl">Notch on June 2025 payslip</label>
+    <label for="n0" id="n0lbl">Notch on June 2025 payslip (Basic Salary)</label>
     <select autocomplete="off" id="n0"></select>
     <p class="hint" id="n0hint">The 2024/25 baseline column in the salary tables. Match the amount to your June 2025 payslip.</p>
     <label for="im">Increment month</label>
@@ -682,7 +682,7 @@ function syncPromo(){
   const jn = $("jnon").checked, col = firstPayCol();
   $("spHead").textContent = jn ? "Starting point (first payslip)" : "Starting point (June 2025)";
   $("g0lbl").textContent = jn ? "Grade on your first payslip" : "Grade on June 2025 payslip";
-  $("n0lbl").textContent = jn ? "Notch on your first payslip" : "Notch on June 2025 payslip";
+  $("n0lbl").textContent = jn ? "Notch on your first payslip (Basic Salary)" : "Notch on June 2025 payslip (Basic Salary)";
   $("n0hint").textContent = jn ? (col ? `You joined after new salaries started, so amounts are at ${FY[col-1]} rates.` : "Amounts are 2024/25 rates, as on your first payslip.")
                                : "The 2024/25 baseline column in the salary tables. Match the amount to your June 2025 payslip.";
   $("haCap1").textContent = jn ? "First payslip" : "June 2025";

@@ -182,7 +182,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="notchSelect" id="notchLbl">Notch on June 2025 Payslip</label>
+                    <label for="notchSelect" id="notchLbl">Notch on June 2025 Payslip (Basic Salary)</label>
                     <select autocomplete="off" id="notchSelect" onchange="calculate();"></select>
                     <div class="help-text" id="notchHelp">Shows 2024/25 basic pay scale notches with basic salaries in brackets.</div>
                 </div>
@@ -420,7 +420,7 @@
         document.getElementById("joinBox").style.display = jn ? "block" : "none";
         document.getElementById("spHead").innerText = jn ? "1. Starting Point (First Payslip)" : "1. Starting Point (June 2025)";
         document.getElementById("gradeLbl").innerText = jn ? "Grade on Your First Payslip" : "Grade on June 2025 Payslip";
-        document.getElementById("notchLbl").innerText = jn ? "Notch on Your First Payslip" : "Notch on June 2025 Payslip";
+        document.getElementById("notchLbl").innerText = jn ? "Notch on Your First Payslip (Basic Salary)" : "Notch on June 2025 Payslip (Basic Salary)";
         document.getElementById("notchHelp").innerText = jn
             ? (col ? `You joined after new salaries started, so amounts are at ${["2024/25","2025/26","2026/27","2027/28","2028/29"][col]} rates.` : "Amounts are 2024/25 rates, as on your first payslip.")
             : "Shows 2024/25 basic pay scale notches with basic salaries in brackets.";
