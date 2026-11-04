@@ -65,6 +65,11 @@
         .headline-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; }
         .headline-card.green { background: #1b4332; color: #fff; border: none; }
         .headline-card.green .hl-sub, .headline-card.green .hl-footer { color: #d8f3dc; }
+        /* arrears cards: highlighted too, in gold so they stand apart from the green pay card */
+        .headline-card:not(.green) { background:#fbf3df; border-color:#e6cf93; box-shadow:inset 0 4px 0 #c9962b; }
+        .headline-card:not(.green) .hl-title { color: #6b5212; }
+        .headline-card:not(.green) .hl-val { color: #5a4207; }
+        .headline-card:not(.green) .hl-footer { color: #6f6046; }
         .hl-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; margin-bottom: 4px; }
         .hl-val { font-size: 1.25rem; font-weight: 800; margin: 4px 0; }
         .hl-footer { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
