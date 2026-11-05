@@ -134,6 +134,9 @@
         .dev-action-container { margin-top: 15px; text-align: center; display: block; }
         .dev-btn { background-color: #2d6a4f; color: white; border: none; border-radius: 6px; padding: 12px 20px; font-size: 0.9rem; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .dev-btn:hover { background-color: #1b4332; }
+        .dev-btn.tip-btn { margin-top: 10px; background: #fbf3df; color: #5a4207; border: 1px solid #e6cf93; }
+        .dev-btn.tip-btn:hover { background: #f5e7c2; }
+        .tip-copy { margin-left: 8px; font: inherit; font-size: 0.8rem; font-weight: 600; border: 1px solid #2d6a4f; background: #fff; color: #2d6a4f; border-radius: 999px; padding: 4px 10px; cursor: pointer; }
         .dev-info-box { display: none; margin-top: 10px; background: #e9f5ed; border: 1px solid #b7e4c7; color: #1b4332; padding: 10px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
 
         .disclaimer { font-size: 0.75rem; color: var(--text-muted); margin-top: 20px; border-top: 1px solid var(--border); padding-top: 10px; }
@@ -366,6 +369,10 @@
                 <div id="devInfoBox" class="dev-info-box">
                     WhatsApp/Call 0721643535 (Dr. Charles Kagiri, PhD)
                 </div>
+                <button type="button" class="dev-btn tip-btn" onclick="toggleTip()">🧃 Buy the developer a juice</button>
+                <div id="tipInfoBox" class="dev-info-box">
+                    Pochi la Biashara · 0721 643 535 <button type="button" class="tip-copy" id="tipCopy" onclick="copyTip()">Copy number</button>
+                </div>
             </div>
         </div>
     </div>
@@ -409,6 +416,16 @@
     function toggleDevInfo() {
         const box = document.getElementById("devInfoBox");
         box.style.display = (box.style.display === "block") ? "none" : "block";
+    }
+    // optional tip (Pochi la Biashara), revealed on tap; one anonymous count per reveal
+    function toggleTip() {
+        const box = document.getElementById("tipInfoBox"), show = box.style.display !== "block";
+        box.style.display = show ? "block" : "none"; document.getElementById("tipCopy").textContent = "Copy number";
+        if (show) try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: "kusu-juice-click", title: "KUSU: buy the developer a juice", event: true }); } catch (e) {}
+    }
+    async function copyTip() {
+        const b = document.getElementById("tipCopy");
+        try { await navigator.clipboard.writeText("0721643535"); b.textContent = "Copied ✓"; } catch (e) { b.textContent = "Copy failed: long-press the number"; }
     }
 
     // ---- Joiners (after June 2025) ----
@@ -927,6 +944,7 @@
         document.getElementById("promo1Box").style.display = "none";
         document.getElementById("promo2Box").style.display = "none";
         const dev = document.getElementById("devInfoBox"); if (dev) dev.style.display = "none";
+        const tip = document.getElementById("tipInfoBox"); if (tip) tip.style.display = "none";
         document.getElementById("printReport").innerHTML = "";
         toggleJoin();         // back to the June 2025 labels; rebuilds notches for the default grade
         calculate();

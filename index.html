@@ -165,6 +165,7 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .juice-rev{margin-top:12px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}
 .juice-num{font-size:15px;line-height:1.4;font-weight:700;font-variant-numeric:tabular-nums;background:var(--green-soft);color:var(--green);border-radius:999px;padding:9px 16px}
 .juice-name{flex-basis:100%;font-size:14px;font-weight:600;color:var(--ink)}
+.juice-btn.tip{margin-top:12px;background:#fbf3df;color:#5a4207;border:1px solid #e6cf93}
 .juice-copy{font:inherit;font-size:13.5px;font-weight:600;border:1px solid var(--green);background:#fff;color:var(--green);border-radius:999px;padding:7px 14px;cursor:pointer}
 .note{font-size:13px;color:var(--muted);margin-top:10px}
 .assume{background:var(--amber-soft);border:1px solid #ecd9ae;border-radius:8px;padding:10px 14px;font-size:13.5px;color:#5c3a00}
@@ -322,6 +323,11 @@ footer p{margin:0 0 10px}
     <button type="button" class="juice-btn" id="juiceBtn">💬 Questions &amp; Feedback</button>
     <div class="juice-rev" id="juiceRev" hidden>
       <span class="juice-num" id="juiceNum"></span>
+    </div>
+    <div><button type="button" class="juice-btn tip" id="tipBtn" aria-expanded="false">🧃 Buy the developer a juice</button></div>
+    <div class="juice-rev" id="tipRev" hidden>
+      <span class="juice-num" id="tipNum"></span>
+      <button type="button" class="juice-copy" id="tipCopy">Copy number</button>
     </div>
   </div>
 </footer>
@@ -802,6 +808,13 @@ $("pdfBtn").addEventListener("click", ()=>{ fillPrintSummary(); fillPrintReport(
     $("juiceNum").textContent = show ? "WhatsApp/Call "+parts.join("")+" (Dr. Charles Kagiri, PhD)" : "";
     $("juiceRev").hidden = !show; $("juiceBtn").setAttribute("aria-expanded", String(show));
     if(show) try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path:"contact-click", title:"Clicked: contact developer", event:true}); }catch(e){} });
+  // optional tip: Pochi la Biashara, revealed on tap
+  $("tipBtn").addEventListener("click",()=>{
+    const show = $("tipRev").hidden;
+    $("tipNum").textContent = show ? "Pochi la Biashara · "+parts.join(" ") : "";
+    $("tipRev").hidden = !show; $("tipBtn").setAttribute("aria-expanded", String(show)); $("tipCopy").textContent = "Copy number";
+    if(show) try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path:"juice-click", title:"Clicked: buy the developer a juice", event:true}); }catch(e){} });
+  $("tipCopy").addEventListener("click", async()=>{ try{ await navigator.clipboard.writeText(parts.join("")); $("tipCopy").textContent="Copied ✓"; }catch(e){ $("tipCopy").textContent="Copy failed: long-press the number"; } });
 })();
 
 // anonymous usage count: one "used" event per visit, on the first real input. No values are sent.
@@ -832,6 +845,7 @@ function resetForm(){
   $("n0").dataset.col = "0";
   if($("printReport")) $("printReport").innerHTML = "";
   const jr=$("juiceRev"); if(jr){ jr.hidden=true; $("juiceNum").textContent=""; }
+  const tr=$("tipRev"); if(tr){ tr.hidden=true; $("tipNum").textContent=""; $("tipBtn").setAttribute("aria-expanded","false"); }
   syncPromo(); compute();
 }
 window.addEventListener("pageshow", ()=>setTimeout(resetForm,0));   // fires on first load, refresh and back/forward
