@@ -811,7 +811,7 @@ $("pdfBtn").addEventListener("click", ()=>{ fillPrintSummary(); fillPrintReport(
   // optional tip: Pochi la Biashara, revealed on tap
   $("tipBtn").addEventListener("click",()=>{
     const show = $("tipRev").hidden;
-    $("tipNum").textContent = show ? "Pochi la Biashara · "+parts.join(" ") : "";
+    $("tipNum").textContent = show ? "M-Pesa · Pochi la Biashara · "+parts.join(" ") : "";
     $("tipRev").hidden = !show; $("tipBtn").setAttribute("aria-expanded", String(show)); $("tipCopy").textContent = "Copy number";
     if(show) try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path:"juice-click", title:"Clicked: buy the developer a juice", event:true}); }catch(e){} });
   $("tipCopy").addEventListener("click", async()=>{ try{ await navigator.clipboard.writeText(parts.join("")); $("tipCopy").textContent="Copied ✓"; }catch(e){ $("tipCopy").textContent="Copy failed: long-press the number"; } });
