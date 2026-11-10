@@ -139,6 +139,7 @@
         @media print { .quiet-tip { display: none; } }
         .dev-btn.tip-btn { margin-top: 10px; background: #fbf3df; color: #5a4207; border: 1px solid #e6cf93; }
         .dev-btn.tip-btn:hover { background: #f5e7c2; }
+        .tip-hint { margin: 4px 0 8px; font-weight: 400; font-size: 0.78rem; color: #4a5a50; }
         .tip-copy { margin-left: 8px; font: inherit; font-size: 0.8rem; font-weight: 600; border: 1px solid #2d6a4f; background: #fff; color: #2d6a4f; border-radius: 999px; padding: 4px 10px; cursor: pointer; }
         .dev-info-box { display: none; margin-top: 10px; background: #e9f5ed; border: 1px solid #b7e4c7; color: #1b4332; padding: 10px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
 
@@ -375,7 +376,9 @@
                 </div>
                 <button type="button" class="dev-btn tip-btn" onclick="toggleTip()">🧃 Buy the developer a juice</button>
                 <div id="tipInfoBox" class="dev-info-box">
-                    M-Pesa · Pochi la Biashara · 0721 643 535 <button type="button" class="tip-copy" id="tipCopy" onclick="copyTip()">Copy number</button>
+                    M-Pesa · Pochi la Biashara · 0721 643 535
+                    <div class="tip-hint">A juice is about KES 100. Buy as many as you like.</div>
+                    <button type="button" class="tip-copy" id="tipCopy" onclick="copyTip()">Copy number</button>
                 </div>
             </div>
         </div>
