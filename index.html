@@ -165,6 +165,8 @@ tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
 .juice-rev{margin-top:12px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}
 .juice-num{font-size:15px;line-height:1.4;font-weight:700;font-variant-numeric:tabular-nums;background:var(--green-soft);color:var(--green);border-radius:999px;padding:9px 16px}
 .juice-name{flex-basis:100%;font-size:14px;font-weight:600;color:var(--ink)}
+.quiet-tip{margin:10px 0 2px;text-align:center;font-size:13.5px;color:#6b6250}
+.quiet-tip a{color:#5a4207;font-weight:600;text-decoration:none;border-bottom:1px dotted #c9962b;cursor:pointer}
 .juice-btn.tip{margin-top:12px;background:#fbf3df;color:#5a4207;border:1px solid #e6cf93}
 .juice-copy{font:inherit;font-size:13.5px;font-weight:600;border:1px solid var(--green);background:#fff;color:var(--green);border-radius:999px;padding:7px 14px;cursor:pointer}
 .note{font-size:13px;color:var(--muted);margin-top:10px}
@@ -543,7 +545,7 @@ function render(R){
     <div class="kpi"><div class="k">First month on staff</div><div class="v">${mLabel(J)}</div><div class="s">${label(jan)} · new rates</div></div>`
     : `<div class="kpi"><div class="k">Arrears ${J>=12 ? "Jul 2025 – Jun 2026" : A1} (gross)</div><div class="v">${fmt(R.arr2526)}</div><div class="s">${J>=12 ? "None: you joined after June 2026" : `3 instalments of ~${fmt(R.instal)}`}</div></div>
     <div class="kpi"><div class="k">Arrears ${A2} (gross)</div><div class="v">${fmt(R.arrJulDec26)}</div><div class="s">Paid with the January 2027 salary</div></div>`}
-  </div>`;
+  </div><p class="quiet-tip">Found this useful? <a href="#tipBtn" class="quiet-tip-link">🧃 Buy the developer a juice</a></p>`;
 
   // 1. monthly gross by year
   h += `<section class="card"><h2><span class="sec-num">1</span>Monthly pay by year</h2>
@@ -657,7 +659,7 @@ function renderLeaver(R, label){
     <div class="kpi hl"><div class="k">Total arrears owed (gross)</div><div class="v">${fmt(tot)}</div><div class="s">${nMonths ? `${mLabel(J)} – ${mLabel(ae)} · ${nMonths} months` : "None: you joined after new salaries started"}</div></div>
     <div class="kpi"><div class="k">Estimated take-home</div><div class="v">${fmt(L.net)}</div><div class="s">After tax, levies, pension and union fee</div></div>
     <div class="kpi"><div class="k">Last salary (${terms})</div><div class="v">${fmt(lastG)}</div><div class="s">${mLabel(e)} · ${label(last)}</div></div>
-  </div>`;
+  </div><p class="quiet-tip">Found this useful? <a href="#tipBtn" class="quiet-tip-link">🧃 Buy the developer a juice</a></p>`;
   const snaps = [
     {t:`Last salary, ${mLabel(e)} (${terms})`, r:last, old:!R.lastNew},
     {t:"From Jul 2025 (2025/26 rates)", r:rows[0]},
@@ -792,7 +794,7 @@ function fillPrintReport(){
 
   // ---- page 3+: the detailed projections, as on screen (without the headline tiles, already on page 1) ----
   const det = $("out").cloneNode(true); det.removeAttribute("id");
-  det.querySelectorAll(".kpis,.assume").forEach(e=>e.remove());   // tiles are on page 1, assumptions on page 2
+  det.querySelectorAll(".kpis,.quiet-tip,.assume").forEach(e=>e.remove());   // tiles are on page 1, assumptions on page 2
   const p3 = `<div class="rep-page last"><h3>Detailed projections</h3><div class="meta">The same results as on screen, July 2025 to June 2029.</div><div class="outputs">${det.innerHTML}</div></div>`;
   $("printReport").innerHTML = `<div class="rep">${p1}${p2}${p3}</div>`;
 }
@@ -814,6 +816,10 @@ $("pdfBtn").addEventListener("click", ()=>{ fillPrintSummary(); fillPrintReport(
     $("tipNum").textContent = show ? "M-Pesa · Pochi la Biashara · "+parts.join(" ") : "";
     $("tipRev").hidden = !show; $("tipBtn").setAttribute("aria-expanded", String(show)); $("tipCopy").textContent = "Copy number";
     if(show) try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path:"juice-click", title:"Clicked: buy the developer a juice", event:true}); }catch(e){} });
+  // quiet line under the headline cards: jump to the juice button and open it
+  document.addEventListener("click", ev=>{ const a = ev.target.closest && ev.target.closest(".quiet-tip-link"); if(!a) return; ev.preventDefault();
+    try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path:"juice-line-click", title:"Clicked: juice line under results", event:true}); }catch(e){}
+    if($("tipRev").hidden) $("tipBtn").click(); $("tipRev").scrollIntoView({behavior:"smooth", block:"center"}); });
   $("tipCopy").addEventListener("click", async()=>{ try{ await navigator.clipboard.writeText(parts.join("")); $("tipCopy").textContent="Copied ✓"; }catch(e){ $("tipCopy").textContent="Copy failed: long-press the number"; } });
 })();
 

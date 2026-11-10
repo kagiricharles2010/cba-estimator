@@ -134,6 +134,9 @@
         .dev-action-container { margin-top: 15px; text-align: center; display: block; }
         .dev-btn { background-color: #2d6a4f; color: white; border: none; border-radius: 6px; padding: 12px 20px; font-size: 0.9rem; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .dev-btn:hover { background-color: #1b4332; }
+        .quiet-tip { margin: -5px 0 15px; text-align: center; font-size: 0.85rem; color: #6b6250; }
+        .quiet-tip a { color: #5a4207; font-weight: 600; text-decoration: none; border-bottom: 1px dotted #c9962b; cursor: pointer; }
+        @media print { .quiet-tip { display: none; } }
         .dev-btn.tip-btn { margin-top: 10px; background: #fbf3df; color: #5a4207; border: 1px solid #e6cf93; }
         .dev-btn.tip-btn:hover { background: #f5e7c2; }
         .tip-copy { margin-left: 8px; font: inherit; font-size: 0.8rem; font-weight: 600; border: 1px solid #2d6a4f; background: #fff; color: #2d6a4f; border-radius: 999px; padding: 4px 10px; cursor: pointer; }
@@ -340,6 +343,7 @@
                     <div class="hl-footer" id="hlCard3Sub">Paid with the January 2027 salary</div>
                 </div>
             </div>
+            <p class="quiet-tip">Found this useful? <a href="#" class="quiet-tip-link" onclick="juiceLine(event)">🧃 Buy the developer a juice</a></p>
 
             <div class="panel">
                 <h2>3. Salary & Allowance Schedules</h2>
@@ -422,6 +426,12 @@
         const box = document.getElementById("tipInfoBox"), show = box.style.display !== "block";
         box.style.display = show ? "block" : "none"; document.getElementById("tipCopy").textContent = "Copy number";
         if (show) try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: "kusu-juice-click", title: "KUSU: buy the developer a juice", event: true }); } catch (e) {}
+    }
+    function juiceLine(ev) {   // quiet line under the headline cards: jump to the juice button and open it
+        ev.preventDefault();
+        try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: "kusu-juice-line-click", title: "KUSU: juice line under results", event: true }); } catch (e) {}
+        if (document.getElementById("tipInfoBox").style.display !== "block") toggleTip();
+        document.getElementById("tipInfoBox").scrollIntoView({ behavior: "smooth", block: "center" });
     }
     async function copyTip() {
         const b = document.getElementById("tipCopy");
