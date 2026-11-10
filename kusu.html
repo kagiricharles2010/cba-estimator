@@ -930,7 +930,11 @@
     window.addEventListener("beforeprint", fillPrintReport);
     window.addEventListener("afterprint", () => { document.getElementById("printReport").innerHTML = ""; });   // don't leave figures in the page
 
-    function downloadPdf() { fillPrintSummary(); fillPrintReport(); try { window.print(); } catch (e) {} }
+    function downloadPdf() {
+        fillPrintSummary(); fillPrintReport();
+        try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: "kusu-pdf-download", title: "KUSU: Download PDF", event: true }); } catch (e) {}   // anonymous count, no values
+        try { window.print(); } catch (e) {}
+    }
 
     // Anonymous usage count: one "kusu-calculator-used" event per visit, on the first real input by the user.
     // No values are sent. (Loading, refreshing or clearing the page does not count as use.)

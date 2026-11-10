@@ -801,7 +801,9 @@ function fillPrintReport(){
 window.addEventListener("beforeprint", fillPrintReport);
 window.addEventListener("afterprint", ()=>{ $("printReport").innerHTML=""; });   // don't leave figures in the page
 
-$("pdfBtn").addEventListener("click", ()=>{ fillPrintSummary(); fillPrintReport(); try{ window.print(); }catch(e){} });
+$("pdfBtn").addEventListener("click", ()=>{ fillPrintSummary(); fillPrintReport();
+  try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path:"pdf-download", title:"Clicked: Download PDF", event:true}); }catch(e){}   // anonymous count, no values
+  try{ window.print(); }catch(e){} });
 
 // donate button: number assembled at runtime so it isn't plain text in the page
 (()=>{ const parts=["0721","643","535"];
