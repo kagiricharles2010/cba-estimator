@@ -1,6 +1,9 @@
 // "Thank you for the juice" list, shown on the UASU and KUSU calculators.
-// HOW TO ADD SOMEONE: copy the last line, change the first name and the number of juices (KES 100 = 1 juice).
-// Newest goes LAST. Only add first names of people who agreed to be named.
+// HOW TO ADD SOMEONE: copy the last line and change the name and the amount in KES.
+// Icons: each KES 1,000 = one yellow juice box; each KES 100 = one green juice box.
+// Newest goes LAST. Only add names of people who agreed to be named.
 window.JUICE_THANKS = [
-  // { name: "Wanjiru", juices: 2 },   <- example: remove the two slashes at the start to make a line show
+  { name: "Morris K", kes: 2000 },
+  { name: "Suzan Y", kes: 500 },
+  { name: "Johnson M", kes: 100 },
 ];

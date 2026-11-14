@@ -145,7 +145,9 @@
         .thanks ul { list-style: none; margin: 0; padding: 0; max-height: 7.5em; overflow-y: auto; font-size: 0.82rem; line-height: 1.5em; color: #333; }
         .thanks li { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted #eadfbf; padding: 0 2px; }
         .thanks li:last-child { border-bottom: 0; }
-        .thanks .tj { color: #6f6046; white-space: nowrap; }
+        .thanks .tj { display: inline-flex; align-items: flex-end; flex-wrap: wrap; justify-content: flex-end; gap: 1px; }
+        .thanks .jb { width: 11px; height: 15px; }
+        .thanks .jb.big { width: 14px; height: 19px; }
         .thanks-empty { color: #6c757d; }
         .thanks-more { font-size: 0.7rem; color: #6c757d; margin-top: 3px; }
         .tip-copy { margin-left: 8px; font: inherit; font-size: 0.8rem; font-weight: 600; border: 1px solid #2d6a4f; background: #fff; color: #2d6a4f; border-radius: 999px; padding: 4px 10px; cursor: pointer; }
@@ -448,8 +450,12 @@
     function renderThanks(){
     const el = document.getElementById("thanksList"); if(!el) return;
     const esc = t => String(t).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+    // juice box icon: green = KES 100, yellow (slightly larger) = KES 1,000
+    const box = (fill, top, cls) => `<svg class="jb ${cls}" viewBox="0 0 16 22" aria-hidden="true"><path d="M9.5 6V1.2h3" stroke="#6b6b6b" stroke-width="1.3" fill="none" stroke-linecap="round"/><rect x="2" y="5" width="12" height="16" rx="1.6" fill="${fill}"/><rect x="2" y="5" width="12" height="3.6" rx="1.2" fill="${top}"/><circle cx="8" cy="14.2" r="2.7" fill="#fff" opacity=".85"/></svg>`;
+    const icons = kes => { const k = Math.max(100, Math.round(+kes || 0)), big = Math.floor(k / 1000), small = Math.floor((k % 1000) / 100);
+      return box("#f2b705", "#c48f00", "big").repeat(big) + box("#3aa657", "#2a7d41", "").repeat(small || (big ? 0 : 1)); };
     const L = (window.JUICE_THANKS || []).filter(t => t && t.name);
-    el.innerHTML = L.length ? L.map(t => `<li><span>${esc(t.name)}</span><span class="tj">🧃${(+t.juices||1) > 1 ? " ×" + (+t.juices) : ""}</span></li>`).join("")
+    el.innerHTML = L.length ? L.map(t => `<li><span>${esc(t.name)}</span><span class="tj" title="KES ${(+t.kes||0).toLocaleString("en-KE")}">${icons(t.kes != null ? t.kes : (+t.juices||1) * 100)}</span></li>`).join("")
                             : `<li class="thanks-empty">Your first name could be the first here.</li>`;
     const more = document.getElementById("thanksMore"); if(more) more.hidden = L.length <= 5;
     el.scrollTop = el.scrollHeight;   // newest (last) in view; scroll up for earlier names
