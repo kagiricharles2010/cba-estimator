@@ -140,6 +140,14 @@
         .dev-btn.tip-btn { margin-top: 10px; background: #fbf3df; color: #5a4207; border: 1px solid #e6cf93; }
         .dev-btn.tip-btn:hover { background: #f5e7c2; }
         .tip-hint { margin: 4px 0 8px; font-weight: 400; font-size: 0.78rem; color: #4a5a50; }
+        .thanks { margin: 10px auto 2px; max-width: 360px; text-align: left; border: 1px solid #e6cf93; background: #fffaf0; border-radius: 8px; padding: 8px 10px; font-weight: 400; }
+        .thanks-h { font-size: 0.78rem; font-weight: 700; color: #5a4207; margin-bottom: 4px; }
+        .thanks ul { list-style: none; margin: 0; padding: 0; max-height: 7.5em; overflow-y: auto; font-size: 0.82rem; line-height: 1.5em; color: #333; }
+        .thanks li { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted #eadfbf; padding: 0 2px; }
+        .thanks li:last-child { border-bottom: 0; }
+        .thanks .tj { color: #6f6046; white-space: nowrap; }
+        .thanks-empty { color: #6c757d; }
+        .thanks-more { font-size: 0.7rem; color: #6c757d; margin-top: 3px; }
         .tip-copy { margin-left: 8px; font: inherit; font-size: 0.8rem; font-weight: 600; border: 1px solid #2d6a4f; background: #fff; color: #2d6a4f; border-radius: 999px; padding: 4px 10px; cursor: pointer; }
         .dev-info-box { display: none; margin-top: 10px; background: #e9f5ed; border: 1px solid #b7e4c7; color: #1b4332; padding: 10px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
 
@@ -379,6 +387,7 @@
                     M-Pesa · Pochi la Biashara · 0721 643 535
                     <div class="tip-hint">A juice is about KES 100. Buy as many as you like.</div>
                     <button type="button" class="tip-copy" id="tipCopy" onclick="copyTip()">Copy number</button>
+                    <div class="thanks"><div class="thanks-h">Thank you for the juice!</div><ul id="thanksList"></ul><div class="thanks-more" id="thanksMore" hidden>Newest at the bottom · scroll up for more</div></div>
                 </div>
             </div>
         </div>
@@ -427,7 +436,7 @@
     // optional tip (Pochi la Biashara), revealed on tap; one anonymous count per reveal
     function toggleTip() {
         const box = document.getElementById("tipInfoBox"), show = box.style.display !== "block";
-        box.style.display = show ? "block" : "none"; document.getElementById("tipCopy").textContent = "Copy number";
+        box.style.display = show ? "block" : "none"; if (show) renderThanks(); document.getElementById("tipCopy").textContent = "Copy number";
         if (show) try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: "kusu-juice-click", title: "KUSU: buy the developer a juice", event: true }); } catch (e) {}
     }
     function juiceLine(ev) {   // quiet line under the headline cards: jump to the juice button and open it
@@ -436,6 +445,15 @@
         if (document.getElementById("tipInfoBox").style.display !== "block") toggleTip();
         document.getElementById("tipInfoBox").scrollIntoView({ behavior: "smooth", block: "center" });
     }
+    function renderThanks(){
+    const el = document.getElementById("thanksList"); if(!el) return;
+    const esc = t => String(t).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+    const L = (window.JUICE_THANKS || []).filter(t => t && t.name);
+    el.innerHTML = L.length ? L.map(t => `<li><span>${esc(t.name)}</span><span class="tj">🧃${(+t.juices||1) > 1 ? " ×" + (+t.juices) : ""}</span></li>`).join("")
+                            : `<li class="thanks-empty">Your first name could be the first here.</li>`;
+    const more = document.getElementById("thanksMore"); if(more) more.hidden = L.length <= 5;
+    el.scrollTop = el.scrollHeight;   // newest (last) in view; scroll up for earlier names
+  }
     async function copyTip() {
         const b = document.getElementById("tipCopy");
         try { await navigator.clipboard.writeText("0721643535"); b.textContent = "Copied ✓"; } catch (e) { b.textContent = "Copy failed: long-press the number"; }
@@ -980,5 +998,6 @@
 <!-- GoatCounter Analytics -->
 <script data-goatcounter="https://kagiricharles.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 
+<script src="thanks.js"></script>
 </body>
 </html>
