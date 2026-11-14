@@ -4,6 +4,6 @@
 // Newest goes LAST. Only add names of people who agreed to be named.
 window.JUICE_THANKS = [
   { name: "Morris K", kes: 2000 },
-  { name: "Johnson M", kes: 100 },
-  { name: "Suzan Y", kes: 500 },  
+  { name: "Suzan Y", kes: 500 },
+   { name: "Johnson M", kes: 100 },
 ];
