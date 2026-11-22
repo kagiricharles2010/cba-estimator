@@ -19,14 +19,7 @@
     ".jp .jp-no{background:none;border:1px solid #d9c99c;color:#6b6250;border-radius:999px;padding:9px 14px;font:inherit;cursor:pointer}" +
     "@media print{.jp{display:none!important}}";
   document.head.appendChild(css);
-  function socialLine() {
-    var L = (window.JUICE_THANKS || []).filter(function (t) { return t && t.name; });
-    if (!L.length) return "A juice is about KES 100. Buy as many as you like.";
-    var names = L.slice(-2).reverse().map(function (t) { return String(t.name).replace(/[<>&"']/g, ""); });
-    var more = L.length - names.length;
-    return "Join " + names.join(names.length === 2 && !more ? " and " : ", ") + (more > 0 ? " and " + more + " other" + (more > 1 ? "s" : "") : "") +
-      " who've bought the developer a juice. A juice is about KES 100.";
-  }
+  function socialLine() { return "A juice is about KES 100. Buy as many as you like."; }   // no names in the pop-up
   function close(card, how) {
     if (how) count("juice-popup-" + how, how === "notnow" ? "Juice pop-up: not now" : "Juice pop-up: closed (x or Esc)");
     card.classList.remove("on"); setTimeout(function () { card.remove(); }, 500); document.removeEventListener("keydown", esc); }
