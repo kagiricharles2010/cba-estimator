@@ -27,8 +27,10 @@
     return "Join " + names.join(names.length === 2 && !more ? " and " : ", ") + (more > 0 ? " and " + more + " other" + (more > 1 ? "s" : "") : "") +
       " who've bought the developer a juice. A juice is about KES 100.";
   }
-  function close(card) { card.classList.remove("on"); setTimeout(function () { card.remove(); }, 500); document.removeEventListener("keydown", esc); }
-  function esc(e) { if (e.key === "Escape") { var c = document.querySelector(".jp"); if (c) close(c); } }
+  function close(card, how) {
+    if (how) count("juice-popup-" + how, how === "notnow" ? "Juice pop-up: not now" : "Juice pop-up: closed (x or Esc)");
+    card.classList.remove("on"); setTimeout(function () { card.remove(); }, 500); document.removeEventListener("keydown", esc); }
+  function esc(e) { if (e.key === "Escape") { var c = document.querySelector(".jp"); if (c) close(c, "close"); } }
   function show() {
     if (shown || boxOpen() || !opener()) return;
     if (document.visibilityState !== "visible") { document.addEventListener("visibilitychange", function v() { if (document.visibilityState === "visible") { document.removeEventListener("visibilitychange", v); setTimeout(show, 3000); } }); return; }
@@ -40,7 +42,8 @@
     document.body.appendChild(card); requestAnimationFrame(function () { requestAnimationFrame(function () { card.classList.add("on"); }); });
     document.addEventListener("keydown", esc);
     count("juice-popup-shown", "Juice pop-up shown");
-    card.querySelector(".jp-x").onclick = card.querySelector(".jp-no").onclick = function () { close(card); };
+    card.querySelector(".jp-x").onclick = function () { close(card, "close"); };
+    card.querySelector(".jp-no").onclick = function () { close(card, "notnow"); };
     card.querySelector(".jp-go").onclick = function () {
       count("juice-popup-click", "Juice pop-up: buy a juice"); close(card);
       if (!boxOpen()) opener().click();
